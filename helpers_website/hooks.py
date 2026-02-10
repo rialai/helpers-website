@@ -5,6 +5,13 @@ app_description = "Website customizations"
 app_email = "admin@helpers.ie"
 app_license = "mit"
 
+# Version-controlled website content
+fixtures = [
+	"Web Page",
+	"Website Theme",
+	"Website Settings",
+]
+
 # Apps
 # ------------------
 
