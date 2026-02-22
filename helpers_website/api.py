@@ -162,54 +162,68 @@ def create_sample_employees():
 	Create sample employees in ERPNext.
 	This is an internal function for setting up demo data.
 	"""
+	# First, ensure Company exists
+	if not frappe.db.exists("Company", "Helpers"):
+		try:
+			company = frappe.new_doc("Company")
+			company.company_name = "Helpers"
+			company.abbr = "HLP"
+			company.default_currency = "EUR"
+			company.country = "Ireland"
+			company.insert(ignore_permissions=True)
+			frappe.db.commit()
+			print("Created Company: Helpers")
+		except Exception as e:
+			print(f"Company creation error: {str(e)}")
+	
 	employees_data = [
 		{
 			'employee_name': 'Mykola Riabets',
-			'department': 'Engineering',
-			'designation': 'Lead Engineer',
+			'first_name': 'Mykola',
+			'last_name': 'Riabets',
+			'gender': 'Male',
 			'company': 'Helpers',
-			'status': 'Active',
-			'gender': 'Male'
+			'status': 'Active'
 		},
 		{
 			'employee_name': 'Anna Kovalenko',
-			'department': 'Engineering',
-			'designation': 'Backend Developer',
+			'first_name': 'Anna',
+			'last_name': 'Kovalenko',
+			'gender': 'Female',
 			'company': 'Helpers',
-			'status': 'Active',
-			'gender': 'Female'
+			'status': 'Active'
 		},
 		{
 			'employee_name': 'Dmitry Ivanov',
-			'department': 'Engineering',
-			'designation': 'DevOps Engineer',
+			'first_name': 'Dmitry',
+			'last_name': 'Ivanov',
+			'gender': 'Male',
 			'company': 'Helpers',
-			'status': 'Active',
-			'gender': 'Male'
+			'status': 'Active'
 		},
 		{
 			'employee_name': 'Elena Petrova',
-			'department': 'Operations',
-			'designation': 'Operations Manager',
+			'first_name': 'Elena',
+			'last_name': 'Petrova',
+			'gender': 'Female',
 			'company': 'Helpers',
-			'status': 'Active',
-			'gender': 'Female'
+			'status': 'Active'
 		},
 		{
 			'employee_name': 'Alex Chen',
-			'department': 'Product',
-			'designation': 'Product Manager',
+			'first_name': 'Alex',
+			'last_name': 'Chen',
+			'gender': 'Male',
 			'company': 'Helpers',
-			'status': 'Active',
-			'gender': 'Male'
+			'status': 'Active'
 		},
 		{
 			'employee_name': 'Sofia Martinez',
-			'department': 'Engineering',
-			'designation': 'Frontend Developer',
+			'first_name': 'Sofia',
+			'last_name': 'Martinez',
+			'gender': 'Female',
 			'company': 'Helpers',
-			'status': 'Active',
-			'gender': 'Female'
+			'status': 'Active'
 		}
 	]
 	
