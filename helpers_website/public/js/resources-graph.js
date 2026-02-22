@@ -173,6 +173,16 @@
 				this.ctx.fill();
 				this.ctx.stroke();
 			}
+
+			// Draw labels
+			this.ctx.fillStyle = 'rgba(30, 64, 175, 0.9)';
+			this.ctx.font = '12px "Space Mono", monospace';
+			this.ctx.textAlign = 'left';
+			this.ctx.textBaseline = 'middle';
+			for (const node of this.nodes) {
+				const label = node.label || node.id;
+				this.ctx.fillText(label, node.x + node.radius + 6, node.y);
+			}
 		},
 
 		animate() {
