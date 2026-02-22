@@ -181,48 +181,36 @@ def create_sample_employees():
 			'employee_name': 'Mykola Riabets',
 			'first_name': 'Mykola',
 			'last_name': 'Riabets',
-			'gender': 'Male',
-			'company': 'Helpers',
 			'status': 'Active'
 		},
 		{
 			'employee_name': 'Anna Kovalenko',
 			'first_name': 'Anna',
 			'last_name': 'Kovalenko',
-			'gender': 'Female',
-			'company': 'Helpers',
 			'status': 'Active'
 		},
 		{
 			'employee_name': 'Dmitry Ivanov',
 			'first_name': 'Dmitry',
 			'last_name': 'Ivanov',
-			'gender': 'Male',
-			'company': 'Helpers',
 			'status': 'Active'
 		},
 		{
 			'employee_name': 'Elena Petrova',
 			'first_name': 'Elena',
 			'last_name': 'Petrova',
-			'gender': 'Female',
-			'company': 'Helpers',
 			'status': 'Active'
 		},
 		{
 			'employee_name': 'Alex Chen',
 			'first_name': 'Alex',
 			'last_name': 'Chen',
-			'gender': 'Male',
-			'company': 'Helpers',
 			'status': 'Active'
 		},
 		{
 			'employee_name': 'Sofia Martinez',
 			'first_name': 'Sofia',
 			'last_name': 'Martinez',
-			'gender': 'Female',
-			'company': 'Helpers',
 			'status': 'Active'
 		}
 	]
