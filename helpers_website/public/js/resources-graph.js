@@ -29,7 +29,8 @@
 			this.ctx = this.canvas.getContext('2d');
 			this.setupCanvas();
 			await this.loadData();
-			this.animate();
+			this.runLayout(220);
+			this.draw();
 		},
 
 		setupCanvas() {
@@ -38,6 +39,9 @@
 			window.addEventListener('resize', () => {
 				this.width = this.canvas.width = window.innerWidth;
 				this.height = this.canvas.height = window.innerHeight;
+				if (this.nodes.length) {
+					this.draw();
+				}
 			});
 		},
 
@@ -73,6 +77,17 @@
 				source: this.nodes.find(n => n.id === link.source),
 				target: this.nodes.find(n => n.id === link.target)
 			})).filter(l => l.source && l.target);
+		},
+
+		runLayout(iterations) {
+			for (let i = 0; i < iterations; i++) {
+				this.updateSimulation();
+			}
+
+			for (const node of this.nodes) {
+				node.vx = 0;
+				node.vy = 0;
+			}
 		},
 
 		updateSimulation() {
