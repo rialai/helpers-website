@@ -15,6 +15,27 @@ def get_resources_graph():
 	}
 	"""
 	try:
+		nodes = []
+		links = []
+		
+		# Get Employees
+		employees = frappe.get_list(
+			"Employee",
+			fields=["name", "employee_name", "department", "designation", "status"],
+			filters={"status": "Active"},
+			limit_page_length=100
+		)
+		
+		# Create nodes from employees
+		for emp in employees:
+			nodes.append({
+				"id": emp.get("name"),
+				"label": emp.get("employee_name") or emp.get("name"),
+				"type": "employee",
+				"group": emp.get("department") or "Staff",
+				"designation": emp.get("designation")
+			})
+		
 		# Try to get Item resources
 		items = frappe.get_list(
 			"Item",
@@ -22,9 +43,6 @@ def get_resources_graph():
 			filters={"disabled": 0},
 			limit_page_length=100
 		)
-		
-		nodes = []
-		links = []
 		
 		# Create nodes from items
 		for item in items:
@@ -35,6 +53,46 @@ def get_resources_graph():
 				"group": item.get("item_group"),
 				"description": item.get("description")
 			})
+		
+		# Create links between employees in same department
+		dept_employees = {}
+		for emp in employees:
+			dept = emp.get("department") or "No Department"
+			if dept not in dept_employees:
+				dept_employees[dept] = []
+			dept_employees[dept].append(emp.get("name"))
+		
+		# Link employees in same department (limit to avoid too many links)
+		for dept, emp_list in dept_employees.items():
+			if len(emp_list) > 1 and len(emp_list) <= 10:
+				for i in range(len(emp_list)):
+					for j in range(i + 1, len(emp_list)):
+						links.append({
+							"source": emp_list[i],
+							"target": emp_list[j],
+							"type": "department"
+						})
+		
+		# Try to link employees to items via projects/tasks
+		try:
+			tasks = frappe.get_list(
+				"Task",
+				fields=["name", "assigned_to", "item"],
+				filters={"status": ["!=", "Cancelled"]},
+				limit_page_length=200
+			)
+			
+			for task in tasks:
+				assigned = task.get("assigned_to")
+				item = task.get("item")
+				if assigned and item:
+					links.append({
+						"source": assigned,
+						"target": item,
+						"type": "task"
+					})
+		except:
+			pass
 		
 		# Try to add relationships from Stock Entry or similar
 		# This creates links between items that are related
@@ -65,17 +123,20 @@ def get_resources_graph():
 							"type": "related"
 						})
 		
-		# If no items found, return structure with placeholder
+		# If no data found, return structure with placeholder
 		if not nodes:
 			nodes = [
-				{"id": "res_1", "label": "Resource 1", "type": "item", "group": "Default"},
-				{"id": "res_2", "label": "Resource 2", "type": "item", "group": "Default"},
-				{"id": "res_3", "label": "Resource 3", "type": "item", "group": "Default"},
+				{"id": "emp_1", "label": "Alice Chen", "type": "employee", "group": "Engineering"},
+				{"id": "emp_2", "label": "Bob Smith", "type": "employee", "group": "Engineering"},
+				{"id": "emp_3", "label": "Carol Lee", "type": "employee", "group": "Operations"},
+				{"id": "res_1", "label": "Server A", "type": "item", "group": "Hardware"},
+				{"id": "res_2", "label": "Database", "type": "item", "group": "Software"},
 			]
 			links = [
-				{"source": "res_1", "target": "res_2", "type": "related"},
-				{"source": "res_2", "target": "res_3", "type": "related"},
-				{"source": "res_1", "target": "res_3", "type": "related"},
+				{"source": "emp_1", "target": "emp_2", "type": "department"},
+				{"source": "emp_1", "target": "res_1", "type": "task"},
+				{"source": "emp_2", "target": "res_2", "type": "task"},
+				{"source": "emp_3", "target": "res_1", "type": "task"},
 			]
 		
 		return {
