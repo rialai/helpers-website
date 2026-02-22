@@ -46,6 +46,9 @@ fixtures = [
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
+# include js in website
+web_include_js = "/assets/helpers_website/js/resources-graph.js"
+
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
