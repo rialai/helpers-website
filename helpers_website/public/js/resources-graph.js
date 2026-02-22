@@ -1,6 +1,6 @@
 /**
  * Resources Graph Visualization
- * Displays enterprise resources as an interactive force-directed graph
+ * Clean engineering visualization of enterprise resources
  */
 
 (function() {
@@ -13,13 +13,13 @@
 		height: 0,
 		nodes: [],
 		links: [],
-		animationTime: 0,
 		simulation: {
 			alpha: 1,
-			decay: 0.999,
-			forceStrength: -30,
-			linkStrength: 0.1,
-			friction: 0.5
+			decay: 0.9985,
+			forceStrength: -800,
+			linkStrength: 0.05,
+			centerStrength: 0.02,
+			friction: 0.85
 		},
 
 		async init() {
@@ -28,153 +28,134 @@
 
 			this.ctx = this.canvas.getContext('2d');
 			this.setupCanvas();
-			
-			// Load resources data from server
-			try {
-				const response = await frappe.call({
-					method: 'helpers_website.api.get_resources_graph',
-					callback: (r) => {
-						if (r.message && r.message.success) {
-							this.setData(r.message.nodes, r.message.links);
-							this.animate();
-						}
-					}
-				});
-			} catch (e) {
-				console.error('Failed to load resources:', e);
-				this.animate();
-			}
+			await this.loadData();
+			this.animate();
 		},
 
 		setupCanvas() {
-			const rect = this.canvas.parentElement.getBoundingClientRect();
-			this.width = this.canvas.width = rect.width || window.innerWidth;
-			this.height = this.canvas.height = rect.height || window.innerHeight;
-
-			window.addEventListener('resize', () => this.onResize());
+			this.width = this.canvas.width = window.innerWidth;
+			this.height = this.canvas.height = window.innerHeight;
+			window.addEventListener('resize', () => {
+				this.width = this.canvas.width = window.innerWidth;
+				this.height = this.canvas.height = window.innerHeight;
+			});
 		},
 
-		onResize() {
-			const rect = this.canvas.parentElement.getBoundingClientRect();
-			this.width = this.canvas.width = rect.width || window.innerWidth;
-			this.height = this.canvas.height = rect.height || window.innerHeight;
+		async loadData() {
+			try {
+				const result = await frappe.call({
+					method: 'helpers_website.api.get_resources_graph'
+				});
+				
+				if (result.message && result.message.success) {
+					this.setData(result.message.nodes, result.message.links);
+				}
+			} catch (e) {
+				console.error('Load error:', e);
+			}
 		},
 
 		setData(nodes, links) {
-			// Initialize nodes with positions
+			const centerX = this.width / 2;
+			const centerY = this.height / 2;
+			
 			this.nodes = nodes.map((node, i) => ({
 				...node,
-				x: (Math.random() - 0.5) * this.width,
-				y: (Math.random() - 0.5) * this.height,
-				vx: (Math.random() - 0.5) * 2,
-				vy: (Math.random() - 0.5) * 2,
-				radius: 4 + Math.random() * 6
+				x: centerX + (Math.random() - 0.5) * 400,
+				y: centerY + (Math.random() - 0.5) * 400,
+				vx: 0,
+				vy: 0,
+				radius: 3 + Math.random() * 4
 			}));
 
 			this.links = links.map(link => ({
 				...link,
-				sourceNode: this.nodes.find(n => n.id === link.source),
-				targetNode: this.nodes.find(n => n.id === link.target)
-			})).filter(l => l.sourceNode && l.targetNode);
+				source: this.nodes.find(n => n.id === link.source),
+				target: this.nodes.find(n => n.id === link.target)
+			})).filter(l => l.source && l.target);
 		},
 
 		updateSimulation() {
 			if (this.nodes.length === 0) return;
 
-			// Apply forces
+			const centerX = this.width / 2;
+			const centerY = this.height / 2;
+
 			for (let i = 0; i < this.nodes.length; i++) {
 				const node = this.nodes[i];
 
-				// Repulsive forces between all nodes
-				for (let j = 0; j < this.nodes.length; j++) {
-					if (i === j) continue;
+				// Center gravity
+				const dcx = centerX - node.x;
+				const dcy = centerY - node.y;
+				node.vx += dcx * this.simulation.centerStrength;
+				node.vy += dcy * this.simulation.centerStrength;
+
+				// Node repulsion
+				for (let j = i + 1; j < this.nodes.length; j++) {
 					const other = this.nodes[j];
 					const dx = node.x - other.x;
 					const dy = node.y - other.y;
-					const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-					const force = this.simulation.forceStrength / (distance * distance);
+					const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+					const force = this.simulation.forceStrength / (dist * dist);
 					
-					node.vx += (dx / distance) * force;
-					node.vy += (dy / distance) * force;
+					const fx = (dx / dist) * force;
+					const fy = (dy / dist) * force;
+					
+					node.vx += fx;
+					node.vy += fy;
+					other.vx -= fx;
+					other.vy -= fy;
 				}
-
-				// Attractive forces along links
-				for (const link of this.links) {
-					if (link.sourceNode === node) {
-						const other = link.targetNode;
-						const dx = other.x - node.x;
-						const dy = other.y - node.y;
-						const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-						const force = this.simulation.linkStrength * distance;
-						
-						node.vx += (dx / distance) * force;
-						node.vy += (dy / distance) * force;
-					}
-				}
-
-				// Damping
-				node.vx *= this.simulation.friction;
-				node.vy *= this.simulation.friction;
-
-				// Update position
-				node.x += node.vx;
-				node.y += node.vy;
-
-				// Boundary conditions
-				const padding = 50;
-				if (node.x < -padding) node.x = this.width + padding;
-				if (node.x > this.width + padding) node.x = -padding;
-				if (node.y < -padding) node.y = this.height + padding;
-				if (node.y > this.height + padding) node.y = -padding;
 			}
 
-			// Apply decay
-			this.simulation.alpha *= this.simulation.decay;
+			// Link attraction
+			for (const link of this.links) {
+				const dx = link.target.x - link.source.x;
+				const dy = link.target.y - link.source.y;
+				const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+				const force = this.simulation.linkStrength * dist;
+				
+				const fx = (dx / dist) * force;
+				const fy = (dy / dist) * force;
+				
+				link.source.vx += fx;
+				link.source.vy += fy;
+				link.target.vx -= fx;
+				link.target.vy -= fy;
+			}
+
+			// Update positions
+			for (const node of this.nodes) {
+				node.vx *= this.simulation.friction;
+				node.vy *= this.simulation.friction;
+				node.x += node.vx;
+				node.y += node.vy;
+			}
 		},
 
 		draw() {
-			// Clear canvas
-			this.ctx.fillStyle = 'rgba(15, 15, 15, 0.02)';
+			// Clear with fade
+			this.ctx.fillStyle = 'rgba(10, 10, 10, 0.08)';
 			this.ctx.fillRect(0, 0, this.width, this.height);
 
 			// Draw links
-			this.ctx.strokeStyle = 'rgba(200, 200, 200, 0.15)';
-			this.ctx.lineWidth = 1;
+			this.ctx.strokeStyle = 'rgba(80, 80, 80, 0.3)';
+			this.ctx.lineWidth = 0.8;
 			for (const link of this.links) {
-				const source = link.sourceNode;
-				const target = link.targetNode;
 				this.ctx.beginPath();
-				this.ctx.moveTo(source.x, source.y);
-				this.ctx.lineTo(target.x, target.y);
+				this.ctx.moveTo(link.source.x, link.source.y);
+				this.ctx.lineTo(link.target.x, link.target.y);
 				this.ctx.stroke();
 			}
 
 			// Draw nodes
 			for (const node of this.nodes) {
-				const r = node.radius;
-				
-				// Glow effect
-				this.ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
-				this.ctx.shadowBlur = 8;
-
-				// Node circle
-				this.ctx.fillStyle = this.getNodeColor(node.type);
+				// Simple circle
+				this.ctx.fillStyle = '#E5E5E5';
 				this.ctx.beginPath();
-				this.ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+				this.ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
 				this.ctx.fill();
-
-				this.ctx.shadowBlur = 0;
 			}
-		},
-
-		getNodeColor(type) {
-			const colors = {
-				item: 'rgba(212, 175, 255, 0.9)',
-				bom: 'rgba(100, 200, 255, 0.9)',
-				process: 'rgba(100, 255, 200, 0.9)',
-				default: 'rgba(210, 210, 210, 0.9)'
-			};
-			return colors[type] || colors.default;
 		},
 
 		animate() {
@@ -184,7 +165,7 @@
 		}
 	};
 
-	// Initialize when DOM is ready
+	// Auto-initialize
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', () => ResourcesGraph.init());
 	} else {
