@@ -18,12 +18,13 @@ def get_resources_graph():
 		nodes = []
 		links = []
 		
-		# Get Employees
-		employees = frappe.get_list(
+		# Get Employees (ignore permissions for guest access)
+		employees = frappe.get_all(
 			"Employee",
 			fields=["name", "employee_name", "department", "designation", "status"],
 			filters={"status": "Active"},
-			limit_page_length=100
+			limit_page_length=100,
+			ignore_permissions=True
 		)
 		
 		# Create nodes from employees
@@ -37,11 +38,12 @@ def get_resources_graph():
 			})
 		
 		# Try to get Item resources
-		items = frappe.get_list(
+		items = frappe.get_all(
 			"Item",
 			fields=["name", "item_name", "item_group", "description"],
 			filters={"disabled": 0},
-			limit_page_length=100
+			limit_page_length=100,
+			ignore_permissions=True
 		)
 		
 		# Create nodes from items
@@ -75,11 +77,12 @@ def get_resources_graph():
 		
 		# Try to link employees to items via projects/tasks
 		try:
-			tasks = frappe.get_list(
+			tasks = frappe.get_all(
 				"Task",
 				fields=["name", "assigned_to", "item"],
 				filters={"status": ["!=", "Cancelled"]},
-				limit_page_length=200
+				limit_page_length=200,
+				ignore_permissions=True
 			)
 			
 			for task in tasks:
@@ -97,11 +100,12 @@ def get_resources_graph():
 		# Try to add relationships from Stock Entry or similar
 		# This creates links between items that are related
 		if len(items) > 1:
-			stock_entries = frappe.get_list(
+			stock_entries = frappe.get_all(
 				"Stock Entry Detail",
 				fields=["item_code", "parent"],
 				distinct=True,
-				limit_page_length=500
+				limit_page_length=500,
+				ignore_permissions=True
 			)
 			
 			# Group items by stock entry to create links
