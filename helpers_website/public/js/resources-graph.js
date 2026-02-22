@@ -134,13 +134,12 @@
 		},
 
 		draw() {
-			// Clear with fade
-			this.ctx.fillStyle = 'rgba(10, 10, 10, 0.08)';
-			this.ctx.fillRect(0, 0, this.width, this.height);
+			// Clear canvas (transparent to show grid background)
+			this.ctx.clearRect(0, 0, this.width, this.height);
 
 			// Draw links
-			this.ctx.strokeStyle = 'rgba(80, 80, 80, 0.3)';
-			this.ctx.lineWidth = 0.8;
+			this.ctx.strokeStyle = 'rgba(70, 130, 180, 0.4)';
+			this.ctx.lineWidth = 1.2;
 			for (const link of this.links) {
 				this.ctx.beginPath();
 				this.ctx.moveTo(link.source.x, link.source.y);
@@ -150,11 +149,14 @@
 
 			// Draw nodes
 			for (const node of this.nodes) {
-				// Simple circle
-				this.ctx.fillStyle = '#E5E5E5';
+				// Blue engineering style
+				this.ctx.fillStyle = '#1e40af';
+				this.ctx.strokeStyle = '#3b82f6';
+				this.ctx.lineWidth = 1.5;
 				this.ctx.beginPath();
 				this.ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
 				this.ctx.fill();
+				this.ctx.stroke();
 			}
 		},
 
