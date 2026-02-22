@@ -177,9 +177,9 @@ def create_sample_employees():
 	
 	employees_data = [
 		{
-			'employee_name': 'Mykola Riabets',
-			'first_name': 'Mykola',
-			'last_name': 'Riabets',
+			'employee_name': 'Николай Рябец',
+			'first_name': 'Николай',
+			'last_name': 'Рябец',
 			'gender': 'Male',
 			'date_of_birth': '1990-01-01',
 			'date_of_joining': '2024-01-01',
@@ -187,19 +187,19 @@ def create_sample_employees():
 			'status': 'Active'
 		},
 		{
-			'employee_name': 'Anna Kovalenko',
-			'first_name': 'Anna',
-			'last_name': 'Kovalenko',
-			'gender': 'Female',
+			'employee_name': 'Роман Гармашов',
+			'first_name': 'Роман',
+			'last_name': 'Гармашов',
+			'gender': 'Male',
 			'date_of_birth': '1992-03-15',
 			'date_of_joining': '2024-02-01',
 			'company': 'Helpers',
 			'status': 'Active'
 		},
 		{
-			'employee_name': 'Dmitry Ivanov',
-			'first_name': 'Dmitry',
-			'last_name': 'Ivanov',
+			'employee_name': 'Игорь Кудряшов',
+			'first_name': 'Игорь',
+			'last_name': 'Кудряшов',
 			'gender': 'Male',
 			'date_of_birth': '1988-07-20',
 			'date_of_joining': '2024-01-15',
@@ -207,9 +207,9 @@ def create_sample_employees():
 			'status': 'Active'
 		},
 		{
-			'employee_name': 'Elena Petrova',
-			'first_name': 'Elena',
-			'last_name': 'Petrova',
+			'employee_name': 'София Хомяк',
+			'first_name': 'София',
+			'last_name': 'Хомяк',
 			'gender': 'Female',
 			'date_of_birth': '1991-11-05',
 			'date_of_joining': '2024-03-01',
@@ -217,9 +217,9 @@ def create_sample_employees():
 			'status': 'Active'
 		},
 		{
-			'employee_name': 'Alex Chen',
-			'first_name': 'Alex',
-			'last_name': 'Chen',
+			'employee_name': 'Matthew Ryan',
+			'first_name': 'Matthew',
+			'last_name': 'Ryan',
 			'gender': 'Male',
 			'date_of_birth': '1993-05-12',
 			'date_of_joining': '2024-02-15',
@@ -227,12 +227,22 @@ def create_sample_employees():
 			'status': 'Active'
 		},
 		{
-			'employee_name': 'Sofia Martinez',
-			'first_name': 'Sofia',
-			'last_name': 'Martinez',
-			'gender': 'Female',
+			'employee_name': 'Michael Phelan',
+			'first_name': 'Michael',
+			'last_name': 'Phelan',
+			'gender': 'Male',
 			'date_of_birth': '1994-09-28',
 			'date_of_joining': '2024-04-01',
+			'company': 'Helpers',
+			'status': 'Active'
+		},
+		{
+			'employee_name': 'Андрей Антонов',
+			'first_name': 'Андрей',
+			'last_name': 'Антонов',
+			'gender': 'Male',
+			'date_of_birth': '1989-06-18',
+			'date_of_joining': '2024-03-15',
 			'company': 'Helpers',
 			'status': 'Active'
 		}
