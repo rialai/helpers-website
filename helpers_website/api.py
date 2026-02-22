@@ -155,3 +155,92 @@ def get_resources_graph():
 			"links": [],
 			"count": 0
 		}
+
+
+def create_sample_employees():
+	"""
+	Create sample employees in ERPNext.
+	This is an internal function for setting up demo data.
+	"""
+	employees_data = [
+		{
+			'employee_name': 'Mykola Riabets',
+			'department': 'Engineering',
+			'designation': 'Lead Engineer',
+			'company': 'Helpers',
+			'status': 'Active',
+			'gender': 'Male'
+		},
+		{
+			'employee_name': 'Anna Kovalenko',
+			'department': 'Engineering',
+			'designation': 'Backend Developer',
+			'company': 'Helpers',
+			'status': 'Active',
+			'gender': 'Female'
+		},
+		{
+			'employee_name': 'Dmitry Ivanov',
+			'department': 'Engineering',
+			'designation': 'DevOps Engineer',
+			'company': 'Helpers',
+			'status': 'Active',
+			'gender': 'Male'
+		},
+		{
+			'employee_name': 'Elena Petrova',
+			'department': 'Operations',
+			'designation': 'Operations Manager',
+			'company': 'Helpers',
+			'status': 'Active',
+			'gender': 'Female'
+		},
+		{
+			'employee_name': 'Alex Chen',
+			'department': 'Product',
+			'designation': 'Product Manager',
+			'company': 'Helpers',
+			'status': 'Active',
+			'gender': 'Male'
+		},
+		{
+			'employee_name': 'Sofia Martinez',
+			'department': 'Engineering',
+			'designation': 'Frontend Developer',
+			'company': 'Helpers',
+			'status': 'Active',
+			'gender': 'Female'
+		}
+	]
+	
+	created = []
+	errors = []
+	
+	for emp_data in employees_data:
+		try:
+			# Check if employee already exists
+			existing = frappe.db.exists("Employee", {"employee_name": emp_data['employee_name']})
+			if existing:
+				print(f"Skipped: {emp_data['employee_name']} (already exists)")
+				continue
+			
+			emp = frappe.new_doc('Employee')
+			emp.update(emp_data)
+			emp.insert(ignore_permissions=True)
+			created.append(emp.name)
+			print(f"Created: {emp.employee_name} ({emp.name})")
+		except Exception as e:
+			error_msg = f"Error creating {emp_data['employee_name']}: {str(e)}"
+			errors.append(error_msg)
+			print(error_msg)
+	
+	frappe.db.commit()
+	
+	result = {
+		'success': True,
+		'created': len(created),
+		'employees': created,
+		'errors': errors
+	}
+	print(f"\n✅ Created {len(created)} employees")
+	return result
