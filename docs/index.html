@@ -1,198 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="helpers.ie is the research module of the nodeadline.ie project.">
-  <title>helpers.ie | Research Module</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --paper: #f4f1eb;
-      --ink: #1f2430;
-      --muted: #566073;
-      --line: #c3cad7;
-      --accent: #0e5ecf;
-      --accent-2: #dce8fb;
-      --card: rgba(255, 255, 255, 0.65);
-      --max: 1100px;
+      --bg: #f6f2ea;
+      --ink: #1e2430;
+      --muted: #5b6577;
+      --line: #c8cfdb;
+      --accent: #0d58c2;
+      --max: 980px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--bg);
       color: var(--ink);
-      background:
-        radial-gradient(1000px 400px at 5% -10%, #e5ebf8 0%, transparent 60%),
-        radial-gradient(800px 420px at 95% -10%, #eee6da 0%, transparent 60%),
-        var(--paper);
-      font-family: "Literata", Georgia, serif;
       line-height: 1.5;
     }
 
-    .page {
+    .wrap {
       max-width: var(--max);
       margin: 0 auto;
-      padding: 26px 20px 64px;
+      padding: 28px 18px 50px;
     }
 
     .meta {
       display: flex;
       justify-content: space-between;
-      gap: 14px;
-      align-items: center;
-      font-family: "IBM Plex Mono", monospace;
+      gap: 12px;
+      font-family: "Courier New", monospace;
       font-size: 12px;
-      letter-spacing: 0.04em;
       color: var(--muted);
-      margin-bottom: 24px;
-    }
-
-    .meta strong {
-      color: var(--ink);
-      font-weight: 600;
+      margin-bottom: 20px;
     }
 
     .hero {
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      padding: 28px 0;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 24px;
-      align-items: end;
-    }
-
-    .kicker {
-      margin: 0 0 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.13em;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 11px;
-      color: var(--muted);
+      padding: 24px 0;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(34px, 6vw, 64px);
+      font-size: clamp(34px, 6vw, 58px);
       line-height: 1.02;
-      max-width: 14ch;
+      max-width: 12ch;
     }
 
-    .lead {
+    p.lead {
       margin: 14px 0 0;
-      font-size: clamp(18px, 2.2vw, 24px);
-      color: #2f3848;
-      max-width: 40ch;
-    }
-
-    .aside {
-      border: 1px solid var(--line);
-      background: var(--card);
-      padding: 16px;
-      backdrop-filter: blur(2px);
-    }
-
-    .aside h2 {
-      margin: 0 0 10px;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .aside p {
-      margin: 0;
-      font-size: 18px;
-      line-height: 1.4;
+      max-width: 42ch;
+      font-size: clamp(18px, 2.4vw, 24px);
+      color: #2f394b;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 14px;
-      margin-top: 24px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
     }
 
     .card {
       border: 1px solid var(--line);
-      background: var(--card);
-      padding: 16px;
-      min-height: 168px;
-      transform: translateY(8px);
-      opacity: 0;
-      animation: reveal 520ms ease forwards;
+      background: #ffffffc0;
+      padding: 14px;
     }
 
-    .card:nth-child(2) { animation-delay: 70ms; }
-    .card:nth-child(3) { animation-delay: 140ms; }
-    .card:nth-child(4) { animation-delay: 210ms; }
-
-    .span-4 {
-      grid-column: span 4;
-    }
-
-    .card h3 {
+    .card h2 {
       margin: 0 0 8px;
-      font-size: 25px;
-      line-height: 1.08;
+      font-size: 24px;
+      line-height: 1.1;
     }
 
     .card p {
       margin: 0;
-      color: #334055;
-      font-size: 18px;
+      color: #334156;
+      font-size: 17px;
     }
 
-    .protocol {
-      margin-top: 24px;
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, #eef3fd 0%, #e5ecf9 100%);
-      padding: 16px;
-    }
-
-    .protocol h3 {
-      margin: 0 0 12px;
-      font-size: 28px;
-    }
-
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .step {
-      border: 1px solid #b8c6de;
-      background: rgba(255, 255, 255, 0.65);
-      padding: 12px;
-      min-height: 110px;
-    }
-
-    .step-title {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin: 0 0 8px;
-      color: #324a73;
-    }
-
-    .step p {
-      margin: 0;
-      color: #2d3c53;
-      font-size: 16px;
-    }
-
-    .cta-wrap {
-      margin-top: 24px;
+    .actions {
+      margin-top: 18px;
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
@@ -201,140 +89,68 @@
     .btn {
       display: inline-block;
       text-decoration: none;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: "Courier New", monospace;
       font-size: 13px;
-      letter-spacing: 0.02em;
-      padding: 12px 14px;
-      border: 1px solid #1f4f9b;
+      padding: 10px 12px;
+      border: 1px solid #1d4a95;
       background: var(--accent);
-      color: white;
-      transition: transform 180ms ease;
+      color: #fff;
     }
 
     .btn.secondary {
       background: transparent;
-      color: #1f4f9b;
-      border-color: #95aed8;
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
+      color: #1d4a95;
+      border-color: #97add2;
     }
 
     footer {
-      margin-top: 32px;
+      margin-top: 24px;
       border-top: 1px solid var(--line);
-      padding-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-family: "IBM Plex Mono", monospace;
+      padding-top: 10px;
+      font-family: "Courier New", monospace;
       font-size: 12px;
       color: var(--muted);
     }
 
-    @keyframes reveal {
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    @media (max-width: 920px) {
-      .hero {
-        grid-template-columns: 1fr;
-      }
-
-      .span-4 {
-        grid-column: span 12;
-      }
-
-      .steps {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 840px) {
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <main class="page">
+  <main class="wrap">
     <header class="meta">
-      <strong>helpers.ie</strong>
-      <span>Research Module of nodeadline.ie</span>
+      <span>helpers.ie</span>
+      <span>Research Module</span>
     </header>
 
     <section class="hero" aria-label="Project intent">
-      <div>
-        <p class="kicker">Research Before Delivery</p>
-        <h1>We study how deadline-driven projects break in real conditions.</h1>
-        <p class="lead">
-          helpers.ie maps failure patterns, extracts operational evidence,
-          and turns observations into protocols that nodeadline.ie can implement.
-        </p>
-      </div>
-      <aside class="aside">
-        <h2>Current Focus</h2>
-        <p>
-          Replacing stress-driven promises with transparent delivery rhythm,
-          measurable progress, and practical decision gates.
-        </p>
-      </aside>
+      <h1>Researching why deadline projects fail.</h1>
+      <p class="lead">helpers.ie gathers real project patterns and turns them into practical delivery protocols for nodeadline.ie.</p>
     </section>
 
     <section class="grid" aria-label="Research outputs">
-      <article class="card span-4">
-        <h3>Observed Patterns</h3>
-        <p>
-          We document where scope, team focus, and false certainty collide,
-          then convert that friction into clear operating assumptions.
-        </p>
+      <article class="card">
+        <h2>Observe</h2>
+        <p>Track repeat conflicts between scope, focus, and timing.</p>
       </article>
-      <article class="card span-4">
-        <h3>Research Artifacts</h3>
-        <p>
-          Field notes, failure maps, delivery constraints, and decision templates
-          that can be re-used instead of improvised under pressure.
-        </p>
+      <article class="card">
+        <h2>Model</h2>
+        <p>Turn findings into hypotheses and explicit operating rules.</p>
       </article>
-      <article class="card span-4">
-        <h3>Transfer to Dev</h3>
-        <p>
-          Every validated insight is passed into nodeadline.ie as a concrete
-          protocol to test in active builds.
-        </p>
+      <article class="card">
+        <h2>Transfer</h2>
+        <p>Pass validated rules to nodeadline.ie for implementation.</p>
       </article>
     </section>
 
-    <section class="protocol" aria-label="Validation loop">
-      <h3>Research Loop</h3>
-      <div class="steps">
-        <article class="step">
-          <p class="step-title">1. Detect</p>
-          <p>Identify repeat deadline conflicts in active client scenarios.</p>
-        </article>
-        <article class="step">
-          <p class="step-title">2. Model</p>
-          <p>Translate conflicts into testable process hypotheses.</p>
-        </article>
-        <article class="step">
-          <p class="step-title">3. Test</p>
-          <p>Validate hypotheses through constrained implementation loops.</p>
-        </article>
-        <article class="step">
-          <p class="step-title">4. Transfer</p>
-          <p>Publish stable patterns for nodeadline.ie delivery practice.</p>
-        </article>
-      </div>
-    </section>
-
-    <div class="cta-wrap">
-      <a class="btn" href="mailto:hello@helpers.ie">Share a Case for Research</a>
+    <div class="actions">
+      <a class="btn" href="mailto:hello@helpers.ie">Share a case</a>
       <a class="btn secondary" href="https://nodeadline.ie">Go to nodeadline.ie</a>
     </div>
 
     <footer>
-      <span>helpers.ie</span>
-      <span>Research Module / March 2026</span>
+      Research module of the NoDeadline ecosystem.
     </footer>
   </main>
 </body>
