@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Enterprise Resource Graph">
+	<meta name="og:title" content="Resources">
+	<title>Resources - helpers.ie</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+		
+		* { 
+			margin: 0; 
+			padding: 0; 
+			box-sizing: border-box; 
+		}
+		
+		body, html { 
+			width: 100%; 
+			height: 100%; 
+			overflow: hidden; 
+			background: #f8f9fa; 
+			font-family: 'Space Mono', monospace; 
+		}
+		
+		#resources-graph-canvas { 
+			display: block; 
+			width: 100vw; 
+			height: 100vh; 
+			background-color: #fcfdff;
+			background-image: 
+				linear-gradient(rgba(100, 149, 237, 0.15) 1px, transparent 1px),
+				linear-gradient(90deg, rgba(100, 149, 237, 0.15) 1px, transparent 1px),
+				linear-gradient(rgba(100, 149, 237, 0.4) 1px, transparent 1px),
+				linear-gradient(90deg, rgba(100, 149, 237, 0.4) 1px, transparent 1px);
+			background-size: 
+				10px 10px,
+				10px 10px,
+				50px 50px,
+				50px 50px;
+			background-position: 
+				-1px -1px,
+				-1px -1px,
+				-1px -1px,
+				-1px -1px;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="resources-graph-canvas"></canvas>
+	
+	<script src="./assets/resources-graph.js"></script>
+	
+	<script>
+		// Initialize graph when page loads
+		document.addEventListener('DOMContentLoaded', () => {
+			ResourcesGraph.init();
+		});
+	</script>
+</body>
+</html>
