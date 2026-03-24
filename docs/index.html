@@ -6,6 +6,7 @@
       --line: #c8cfdb;
       --accent: #0d58c2;
       --max: 980px;
+      --panel-bg: #ffffffc0;
     }
 
     * { box-sizing: border-box; }
@@ -61,9 +62,43 @@
       margin-top: 18px;
     }
 
+    .what-can {
+      margin-top: 24px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-bg);
+    }
+
+    .what-can h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .what-can ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #334156;
+      font-size: 17px;
+    }
+
+    .what-can li + li {
+      margin-top: 8px;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    @media (max-width: 540px) {
+      .nowrap {
+        white-space: normal;
+      }
+    }
+
     .card {
       border: 1px solid var(--line);
-      background: #ffffffc0;
+      background: var(--panel-bg);
       padding: 14px;
     }
 
@@ -142,6 +177,15 @@
         <h2>Transfer</h2>
         <p>Pass validated rules to nodeadline.ie for implementation.</p>
       </article>
+    </section>
+
+    <section class="what-can" aria-label="What you can do here">
+      <h2>Что можем сделать тут?</h2>
+      <ul>
+        <li>Узнать, чем мы занимаемся: наблюдаем, моделируем и передаем рабочие правила в <span class="nowrap">nodeadline.ie</span>.</li>
+        <li>Поделиться кейсом или запросом — просто напишите на <a href="mailto:hello@helpers.ie">hello@helpers.ie</a>.</li>
+        <li>Посмотреть пример данных: <a href="data/graph.json">graph.json</a> показывает, как мы описываем связи между ресурсами.</li>
+      </ul>
     </section>
 
     <div class="actions">
