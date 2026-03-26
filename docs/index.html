@@ -118,39 +118,91 @@
       openNodeadline();
     });
 
-    /* ── Triskelion (dual-layer: soft glow + crisp line) ── */
+    /* ── Triskelion (Newgrange-style: three connected double-spirals) ── */
+    function triskelionPath(size) {
+      // Each arm: a curve from center outward to a spiral tip that curls inward.
+      // Three arms at 120° intervals, connected at center.
+      const arms = 3;
+      const spiralTurns = 1.8;
+      const spiralSteps = 80;
+      const armLen = size * 0.55;       // how far the arm reaches before spiraling
+      const spiralR = size * 0.32;      // radius of the terminal spiral
+      const paths = [];
+
+      for (let a = 0; a < arms; a++) {
+        const base = (a / arms) * Math.PI * 2 - Math.PI / 2;
+        const pts = [];
+
+        // Part 1: curved arm from center outward
+        const armSteps = 30;
+        for (let i = 0; i <= armSteps; i++) {
+          const f = i / armSteps;
+          // slight S-curve outward
+          const r = f * armLen;
+          const bend = Math.sin(f * Math.PI) * 0.3;
+          const ang = base + bend;
+          pts.push([Math.cos(ang) * r, Math.sin(ang) * r]);
+        }
+
+        // Part 2: terminal spiral (curls inward from the arm tip)
+        const tipX = pts[pts.length - 1][0];
+        const tipY = pts[pts.length - 1][1];
+        const spiralCenter = [
+          tipX + Math.cos(base + Math.PI * 0.5) * spiralR * 0.35,
+          tipY + Math.sin(base + Math.PI * 0.5) * spiralR * 0.35,
+        ];
+
+        for (let i = 1; i <= spiralSteps; i++) {
+          const f = i / spiralSteps;
+          const shrink = 1 - f;  // spiral gets tighter
+          const ang = base + Math.PI * 0.5 + f * spiralTurns * Math.PI * 2;
+          const r = spiralR * shrink;
+          pts.push([
+            spiralCenter[0] + Math.cos(ang) * r,
+            spiralCenter[1] + Math.sin(ang) * r,
+          ]);
+        }
+
+        paths.push(pts);
+      }
+      return paths;
+    }
+
+    let _triskelionCache = null;
+    function getTriskelionPaths(size) {
+      if (!_triskelionCache || Math.abs(_triskelionCache.size - size) > 1) {
+        _triskelionCache = { size, paths: triskelionPath(size) };
+      }
+      return _triskelionCache.paths;
+    }
+
     function drawTriskelion(x, y, size, rot, alpha) {
-      const arms = 3, turns = 2.6, steps = 160;
+      const paths = getTriskelionPaths(size);
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rot);
       ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
       // glow layer
-      ctx.globalAlpha = alpha * 0.35;
+      ctx.globalAlpha = alpha * 0.4;
       ctx.strokeStyle = rgba(EMERALD, 1);
-      ctx.lineWidth = 3.5;
-      for (let a = 0; a < arms; a++) {
-        const base = (a / arms) * Math.PI * 2;
+      ctx.lineWidth = 4;
+      for (const pts of paths) {
         ctx.beginPath();
-        for (let i = 0; i <= steps; i++) {
-          const f = i / steps, ang = base + f * turns * Math.PI * 2, r = f * size;
-          i === 0 ? ctx.moveTo(Math.cos(ang) * r, Math.sin(ang) * r)
-                  : ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
-        }
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
         ctx.stroke();
       }
+
       // crisp layer
       ctx.globalAlpha = alpha;
-      ctx.strokeStyle = rgba(EMERALD, 0.7);
-      ctx.lineWidth = 0.9;
-      for (let a = 0; a < arms; a++) {
-        const base = (a / arms) * Math.PI * 2;
+      ctx.strokeStyle = rgba(EMERALD, 0.75);
+      ctx.lineWidth = 1;
+      for (const pts of paths) {
         ctx.beginPath();
-        for (let i = 0; i <= steps; i++) {
-          const f = i / steps, ang = base + f * turns * Math.PI * 2, r = f * size;
-          i === 0 ? ctx.moveTo(Math.cos(ang) * r, Math.sin(ang) * r)
-                  : ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
-        }
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
