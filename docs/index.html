@@ -1,156 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="helpers.ie research module for nodeadline.ie">
+  <title>helpers.ie | Research Module</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f6f2ea;
-      --ink: #1e2430;
-      --muted: #5b6577;
-      --line: #c8cfdb;
-      --accent: #0d58c2;
-      --max: 980px;
+      --bg: #f3eee6;
+      --paper: #fffaf2;
+      --ink: #1d232f;
+      --muted: #5e6472;
+      --line: #d1c6b9;
+      --accent: #c4471c;
+      --accent-soft: #ffe2d6;
+      --max: 1080px;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      background: var(--bg);
+      font-family: "Fraunces", Georgia, serif;
       color: var(--ink);
-      line-height: 1.5;
+      background:
+        radial-gradient(1000px 360px at 0% -10%, #f6d7c8 0%, transparent 60%),
+        radial-gradient(900px 400px at 100% 0%, #d8e2f2 0%, transparent 60%),
+        var(--bg);
+      line-height: 1.45;
     }
 
-    .wrap {
+    .page {
       max-width: var(--max);
       margin: 0 auto;
-      padding: 28px 18px 50px;
+      padding: 28px 18px 60px;
     }
 
     .meta {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 12px;
-      font-family: "Courier New", monospace;
+      font-family: "IBM Plex Mono", monospace;
       font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .hero {
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      padding: 24px 0;
+      padding: 28px 0;
+      display: grid;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 18px;
+      align-items: end;
+    }
+
+    .kicker {
+      margin: 0 0 10px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(34px, 6vw, 58px);
-      line-height: 1.02;
+      font-size: clamp(42px, 7vw, 76px);
+      line-height: 0.95;
       max-width: 12ch;
     }
 
-    p.lead {
-      margin: 14px 0 0;
+    .lead {
+      margin: 16px 0 0;
+      font-size: clamp(19px, 2.5vw, 27px);
+      color: #30384a;
       max-width: 42ch;
-      font-size: clamp(18px, 2.4vw, 24px);
-      color: #2f394b;
     }
 
-    .grid {
+    .signal {
+      border: 1px solid #d1b39d;
+      background: linear-gradient(180deg, #fff3ea 0%, #ffe9dc 100%);
+      padding: 14px;
+      transform: rotate(-1.2deg);
+      box-shadow: 0 10px 18px rgba(115, 62, 35, 0.12);
+    }
+
+    .signal-title {
+      margin: 0 0 8px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #824f37;
+    }
+
+    .signal p {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .deck {
+      margin-top: 20px;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(12, 1fr);
       gap: 12px;
-      margin-top: 18px;
     }
 
     .card {
       border: 1px solid var(--line);
-      background: #ffffffc0;
-      padding: 14px;
+      background: var(--paper);
+      padding: 16px;
+      min-height: 180px;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: reveal 500ms ease forwards;
+    }
+
+    .card:nth-child(2) {
+      animation-delay: 90ms;
+    }
+
+    .card:nth-child(3) {
+      animation-delay: 180ms;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, var(--accent) 0%, #e89a7f 100%);
+      opacity: 0.55;
+    }
+
+    .span-4 {
+      grid-column: span 4;
     }
 
     .card h2 {
-      margin: 0 0 8px;
-      font-size: 24px;
-      line-height: 1.1;
+      margin: 8px 0 8px;
+      font-size: 30px;
+      line-height: 1;
     }
 
     .card p {
       margin: 0;
-      color: #334156;
-      font-size: 17px;
+      color: #3a4354;
+      font-size: 18px;
+    }
+
+    .loop {
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      background: #f2f6fd;
+      padding: 16px;
+    }
+
+    .loop h3 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.05;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .step {
+      border: 1px solid #c2d2e6;
+      background: #ffffffdb;
+      padding: 10px;
+    }
+
+    .step b {
+      display: block;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      color: #2d5688;
+      text-transform: uppercase;
+    }
+
+    .step p {
+      margin: 0;
+      color: #30425d;
+      font-size: 15px;
     }
 
     .actions {
-      margin-top: 18px;
+      margin-top: 20px;
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
     }
 
     .btn {
-      display: inline-block;
       text-decoration: none;
-      font-family: "Courier New", monospace;
+      font-family: "IBM Plex Mono", monospace;
       font-size: 13px;
-      padding: 10px 12px;
-      border: 1px solid #1d4a95;
+      letter-spacing: 0.02em;
+      border: 1px solid #993718;
       background: var(--accent);
       color: #fff;
+      padding: 12px 14px;
+      transition: transform 170ms ease, box-shadow 170ms ease;
+      box-shadow: 0 8px 14px rgba(139, 61, 30, 0.2);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 16px rgba(139, 61, 30, 0.26);
     }
 
     .btn.secondary {
       background: transparent;
-      color: #1d4a95;
-      border-color: #97add2;
+      color: #9a3c1c;
+      border-color: #d09a87;
+      box-shadow: none;
     }
 
     footer {
-      margin-top: 24px;
-      border-top: 1px solid var(--line);
+      margin-top: 26px;
       padding-top: 10px;
-      font-family: "Courier New", monospace;
+      border-top: 1px solid var(--line);
+      font-family: "IBM Plex Mono", monospace;
       font-size: 12px;
+      letter-spacing: 0.02em;
       color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    @media (max-width: 840px) {
-      .grid { grid-template-columns: 1fr; }
+    @keyframes reveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 930px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .signal {
+        transform: none;
+      }
+
+      .span-4 {
+        grid-column: span 12;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="wrap">
+  <main class="page">
     <header class="meta">
       <span>helpers.ie</span>
-      <span>Research Module</span>
+      <span>research module</span>
     </header>
 
-    <section class="hero" aria-label="Project intent">
-      <h1>Researching why deadline projects fail.</h1>
-      <p class="lead">helpers.ie gathers real project patterns and turns them into practical delivery protocols for nodeadline.ie.</p>
+    <section class="hero" aria-label="Research hero">
+      <div>
+        <p class="kicker">NoDeadline Ecosystem</p>
+        <h1>Research first. Protocols second. Delivery third.</h1>
+        <p class="lead">
+          helpers.ie maps why deadline-centric work fails, then distills repeatable rules
+          that nodeadline.ie can implement without fiction and panic.
+        </p>
+      </div>
+      <aside class="signal">
+        <p class="signal-title">Current Signal</p>
+        <p>
+          Replace promise pressure with transparent cadence, decision gates,
+          and measurable progress.
+        </p>
+      </aside>
     </section>
 
-    <section class="grid" aria-label="Research outputs">
-      <article class="card">
+    <section class="deck" aria-label="Research outputs">
+      <article class="card span-4">
         <h2>Observe</h2>
-        <p>Track repeat conflicts between scope, focus, and timing.</p>
+        <p>Capture real breakpoints where scope, people, and timing collide.</p>
       </article>
-      <article class="card">
+      <article class="card span-4">
         <h2>Model</h2>
-        <p>Turn findings into hypotheses and explicit operating rules.</p>
+        <p>Convert observations into testable constraints and operating assumptions.</p>
       </article>
-      <article class="card">
+      <article class="card span-4">
         <h2>Transfer</h2>
-        <p>Pass validated rules to nodeadline.ie for implementation.</p>
+        <p>Ship validated patterns to nodeadline.ie as implementation protocols.</p>
       </article>
+    </section>
+
+    <section class="loop" aria-label="Research loop">
+      <h3>Validation Loop</h3>
+      <div class="steps">
+        <article class="step">
+          <b>Detect</b>
+          <p>Find recurring deadline friction in active work.</p>
+        </article>
+        <article class="step">
+          <b>Hypothesize</b>
+          <p>Form explicit process assumptions.</p>
+        </article>
+        <article class="step">
+          <b>Test</b>
+          <p>Run controlled implementation cycles.</p>
+        </article>
+        <article class="step">
+          <b>Stabilize</b>
+          <p>Publish what repeatedly works in reality.</p>
+        </article>
+      </div>
     </section>
 
     <div class="actions">
-      <a class="btn" href="mailto:hello@helpers.ie">Share a case</a>
-      <a class="btn secondary" href="https://nodeadline.ie">Go to nodeadline.ie</a>
+      <a class="btn" href="mailto:hello@helpers.ie">Share a research case</a>
+      <a class="btn secondary" href="https://nodeadline.ie">Open nodeadline.ie</a>
     </div>
 
     <footer>
-      Research module of the NoDeadline ecosystem.
+      <span>helpers.ie / research</span>
+      <span>nodeadline ecosystem</span>
     </footer>
   </main>
 </body>
