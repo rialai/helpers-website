@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>helpers.ie</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #050d07; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #f0ebe2; }
     canvas { display: block; touch-action: none; }
   </style>
 </head>
@@ -31,70 +32,43 @@
     const startTime = performance.now();
     const pointer = { x: -999, y: -999 };
 
-    /* ── Palette ── */
-    const EMERALD = [45, 138, 78];
-    const EMERALD_L = [76, 175, 120];
-    const GOLD = [201, 168, 76];
-    const IVORY = [240, 245, 239];
-    const BG = [5, 13, 7];
+    /* ── Palette — warm, muted, ARETE-inspired ── */
+    const INK    = [38, 35, 30];       // dark warm charcoal
+    const WARM   = [160, 148, 130];    // warm gray for lines
+    const FAINT  = [195, 185, 168];    // fainter warm gray
+    const BG     = [240, 235, 226];    // cream background
+    const GREEN  = [58, 105, 78];      // muted forest — Celtic accent
+    const GOLD_M = [168, 142, 90];     // muted gold
+
+    const SERIF = '"EB Garamond", Georgia, "Palatino Linotype", Palatino, serif';
 
     function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
     function lerp(a, b, t) { return a + (b - a) * t; }
     function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
     function clamp(v) { return Math.max(0, Math.min(1, v)); }
-
-    /* ── Ambient motes ── */
-    const motes = [];
-    for (let i = 0; i < 55; i++) {
-      motes.push({
-        x: Math.random(), y: Math.random(),
-        vx: (Math.random() - 0.5) * 0.00025,
-        vy: (Math.random() - 0.5) * 0.00025,
-        r: Math.random() * 1.4 + 0.4,
-        a: Math.random() * 0.12 + 0.02,
-        color: Math.random() > 0.75 ? GOLD : EMERALD_L,
-        ph: Math.random() * Math.PI * 2,
-      });
-    }
-
-    /* ── Edge energy particles ── */
-    const sparks = [];
-    for (let i = 0; i < 14; i++) {
-      sparks.push({
-        edge: Math.floor(Math.random() * 2),
-        pos: Math.random(),
-        spd: 0.12 + Math.random() * 0.22,
-        r: Math.random() * 1.6 + 0.8,
-        color: Math.random() > 0.55 ? GOLD : EMERALD_L,
-        a: 0.25 + Math.random() * 0.35,
-      });
-    }
-
-    /* ── Pulse rings ── */
-    const rings = [];
-    let lastRing = 0;
 
     /* ── Layout ── */
     function getLayout() {
       const portrait = H > W * 1.2;
       const s = Math.min(W, H);
       if (portrait) {
-        const sp = s * 0.28;
+        const sp = s * 0.30;
         return {
-          cnx: cx, cny: H * 0.22,
-          lx: cx - sp * 0.9, ly: H * 0.52,
-          rx: cx + sp * 0.9, ry: H * 0.52,
-          m1x: cx - sp * 1.55, m1y: H * 0.52 - sp * 0.45,
-          m2x: cx - sp * 1.65, m2y: H * 0.52 + sp * 0.35,
+          cnx: cx, cny: H * 0.25,
+          lx: cx - sp * 0.7, ly: H * 0.54,
+          rx: cx + sp * 0.7, ry: H * 0.54,
+          m1x: cx - sp * 1.4, m1y: H * 0.54 - sp * 0.5,
+          m2x: cx - sp * 1.5, m2y: H * 0.54 + sp * 0.4,
         };
       }
-      const sp = s * 0.30, cs = s * 0.18;
+      const sp = s * 0.32, cs = s * 0.19;
       return {
-        cnx: cx, cny: cy - sp * 0.18,
-        lx: cx - sp, ly: cy + sp * 0.55,
-        rx: cx + sp, ry: cy + sp * 0.55,
-        m1x: cx - sp - cs * 0.75, m1y: cy + sp * 0.55 - cs * 0.9,
-        m2x: cx - sp - cs * 1.1,  m2y: cy + sp * 0.55 + cs * 0.2,
+        cnx: cx, cny: cy - sp * 0.22,
+        lx: cx - sp, ly: cy + sp * 0.6,
+        rx: cx + sp, ry: cy + sp * 0.6,
+        m1x: cx - sp - cs * 0.8, m1y: cy + sp * 0.6 - cs * 0.95,
+        m2x: cx - sp - cs * 1.15, m2y: cy + sp * 0.6 + cs * 0.2,
       };
     }
 
@@ -118,335 +92,216 @@
       openNodeadline();
     });
 
-    /* ── Triskelion (Newgrange-style: three connected double-spirals) ── */
+    /* ── Triskelion (Newgrange-style watermark) ── */
     function triskelionPath(size) {
-      // Each arm: a curve from center outward to a spiral tip that curls inward.
-      // Three arms at 120° intervals, connected at center.
-      const arms = 3;
-      const spiralTurns = 1.8;
-      const spiralSteps = 80;
-      const armLen = size * 0.55;       // how far the arm reaches before spiraling
-      const spiralR = size * 0.32;      // radius of the terminal spiral
+      const arms = 3, spiralTurns = 1.8, spiralSteps = 80;
+      const armLen = size * 0.55, spiralR = size * 0.32;
       const paths = [];
-
       for (let a = 0; a < arms; a++) {
         const base = (a / arms) * Math.PI * 2 - Math.PI / 2;
         const pts = [];
-
-        // Part 1: curved arm from center outward
         const armSteps = 30;
         for (let i = 0; i <= armSteps; i++) {
-          const f = i / armSteps;
-          // slight S-curve outward
-          const r = f * armLen;
+          const f = i / armSteps, r = f * armLen;
           const bend = Math.sin(f * Math.PI) * 0.3;
           const ang = base + bend;
           pts.push([Math.cos(ang) * r, Math.sin(ang) * r]);
         }
-
-        // Part 2: terminal spiral (curls inward from the arm tip)
-        const tipX = pts[pts.length - 1][0];
-        const tipY = pts[pts.length - 1][1];
-        const spiralCenter = [
+        const tipX = pts[pts.length - 1][0], tipY = pts[pts.length - 1][1];
+        const sc = [
           tipX + Math.cos(base + Math.PI * 0.5) * spiralR * 0.35,
           tipY + Math.sin(base + Math.PI * 0.5) * spiralR * 0.35,
         ];
-
         for (let i = 1; i <= spiralSteps; i++) {
-          const f = i / spiralSteps;
-          const shrink = 1 - f;  // spiral gets tighter
+          const f = i / spiralSteps, shrink = 1 - f;
           const ang = base + Math.PI * 0.5 + f * spiralTurns * Math.PI * 2;
           const r = spiralR * shrink;
-          pts.push([
-            spiralCenter[0] + Math.cos(ang) * r,
-            spiralCenter[1] + Math.sin(ang) * r,
-          ]);
+          pts.push([sc[0] + Math.cos(ang) * r, sc[1] + Math.sin(ang) * r]);
         }
-
         paths.push(pts);
       }
       return paths;
     }
 
-    let _triskelionCache = null;
-    function getTriskelionPaths(size) {
-      if (!_triskelionCache || Math.abs(_triskelionCache.size - size) > 1) {
-        _triskelionCache = { size, paths: triskelionPath(size) };
-      }
-      return _triskelionCache.paths;
+    let _triCache = null;
+    function getTriPaths(size) {
+      if (!_triCache || Math.abs(_triCache.s - size) > 1) _triCache = { s: size, p: triskelionPath(size) };
+      return _triCache.p;
     }
 
     function drawTriskelion(x, y, size, rot, alpha) {
-      const paths = getTriskelionPaths(size);
+      const paths = getTriPaths(size);
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rot);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // glow layer
-      ctx.globalAlpha = alpha * 0.4;
-      ctx.strokeStyle = rgba(EMERALD, 1);
-      ctx.lineWidth = 4;
-      for (const pts of paths) {
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-        ctx.stroke();
-      }
-
-      // crisp layer
+      ctx.translate(x, y); ctx.rotate(rot);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       ctx.globalAlpha = alpha;
-      ctx.strokeStyle = rgba(EMERALD, 0.75);
-      ctx.lineWidth = 1;
-      for (const pts of paths) {
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-      ctx.restore();
-    }
-
-    /* ── Celtic ring (interlocking arcs around a node) ── */
-    function drawCelticRing(x, y, r, rot, alpha) {
-      const arcs = 6;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rot);
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = rgba(GOLD, 0.6);
+      ctx.strokeStyle = rgba(FAINT, 0.6);
       ctx.lineWidth = 0.7;
-      for (let i = 0; i < arcs; i++) {
-        const a = (i / arcs) * Math.PI * 2;
-        const cx2 = Math.cos(a) * r;
-        const cy2 = Math.sin(a) * r;
-        ctx.beginPath();
-        ctx.arc(cx2, cy2, r * 0.52, a + Math.PI * 0.6, a + Math.PI * 1.4);
+      for (const pts of paths) {
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
       ctx.restore();
     }
 
-    /* ── Main render loop ── */
+    /* ── Bezier edge from A to B with organic curve ── */
+    function drawEdge(ax, ay, bx, by, progress, alpha, bend) {
+      const ex = ax + (bx - ax) * progress;
+      const ey = ay + (by - ay) * progress;
+      const mx = (ax + ex) / 2 + bend;
+      const my = (ay + ey) / 2 - Math.abs(bend) * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.quadraticCurveTo(mx, my, ex, ey);
+      ctx.strokeStyle = rgba(WARM, alpha);
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    /* ── Flowing dot along a bezier ── */
+    function bezierPoint(ax, ay, mx, my, bx, by, t) {
+      const u = 1 - t;
+      return [u * u * ax + 2 * u * t * mx + t * t * bx, u * u * ay + 2 * u * t * my + t * t * by];
+    }
+
+    /* ── Main render ── */
     function frame(now) {
       const t = (now - startTime) / 1000;
-      ctx.clearRect(0, 0, W, H);
+
+      // clear to warm cream
+      ctx.fillStyle = rgba(BG, 1);
+      ctx.fillRect(0, 0, W, H);
 
       const L = getLayout();
       const { cnx, cny, lx, ly, rx, ry, m1x, m1y, m2x, m2y } = L;
-      const cP  = easeOut(clamp(t / 0.7));
-      const eP  = easeOut(clamp((t - 0.7) / 0.9));
-      const nP  = easeOut(clamp((t - 1.5) / 0.6));
-      const lP  = easeOut(clamp((t - 2.5) / 0.8));
-      const pulse = 1 + Math.sin(t * 1.6) * 0.025;
-      const rHov  = hitNodeadline();
+      const cP  = easeOut(clamp(t / 0.8));
+      const eP  = easeOut(clamp((t - 0.6) / 1.2));
+      const nP  = easeOut(clamp((t - 1.6) / 0.7));
+      const lP  = easeOut(clamp((t - 2.8) / 1.0));
+      const rHov = hitNodeadline();
       canvas.style.cursor = rHov ? 'pointer' : 'default';
 
-      /* ═══ LAYER 0 — deep ambient ═══ */
-      if (cP > 0) {
-        const g = ctx.createRadialGradient(cnx, cny, 0, cnx, cny, Math.min(W, H) * 0.75);
-        g.addColorStop(0,   rgba([18, 52, 24], 0.24 * cP));
-        g.addColorStop(0.35, rgba([10, 30, 14], 0.12 * cP));
-        g.addColorStop(0.7,  rgba([5, 15, 7],  0.05 * cP));
-        g.addColorStop(1,   'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, W, H);
+      /* ═══ Triskelion watermark ═══ */
+      const triA = Math.min(cP * 0.5, 0.16);
+      const triS = Math.min(W, H) * 0.28;
+      drawTriskelion(cnx, cny, triS, t * 0.015, triA);
+
+      /* ═══ Edges — organic bezier curves ═══ */
+      const bendL = -25, bendR = 25;
+      if (eP > 0) {
+        drawEdge(cnx, cny, lx, ly, eP, 0.35 * cP, bendL);
+        drawEdge(cnx, cny, rx, ry, eP, 0.35 * cP, bendR);
       }
 
-      /* ═══ LAYER 1 — ambient motes ═══ */
-      for (const m of motes) {
-        m.x += m.vx; m.y += m.vy;
-        if (m.x < -0.03) m.x = 1.03; if (m.x > 1.03) m.x = -0.03;
-        if (m.y < -0.03) m.y = 1.03; if (m.y > 1.03) m.y = -0.03;
-        const flicker = 0.45 + 0.55 * Math.sin(t * 0.7 + m.ph);
-        const a = m.a * flicker * cP;
-        if (a > 0.004) {
-          ctx.globalAlpha = a;
-          ctx.fillStyle = rgba(m.color, 1);
-          ctx.beginPath(); ctx.arc(m.x * W, m.y * H, m.r, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-
-      /* ═══ LAYER 2 — Celtic symbols ═══ */
-      const triA = Math.min(cP * 0.6, 0.065);
-      const triS = Math.min(W, H) * 0.25;
-      drawTriskelion(cnx, cny, triS, t * 0.03, triA);
-
-      // secondary triskelions near branches
-      if (nP > 0) {
-        drawTriskelion(lx, ly, triS * 0.3, -t * 0.045, triA * 0.45 * nP);
-        drawTriskelion(rx, ry, triS * 0.3, t * 0.055, triA * 0.3 * nP);
+      /* ═══ Flowing dots along edges ═══ */
+      if (t > 2.2 && eP > 0.5) {
+        const fadeIn = clamp((t - 2.2) / 2);
+        [[lx, ly, bendL, 0], [rx, ry, bendR, 2.1]].forEach(([bx, by, bend, off]) => {
+          const mx = (cnx + bx) / 2 + bend;
+          const my = (cny + by) / 2 - Math.abs(bend) * 0.5;
+          // two dots per edge, offset in time
+          [0, 0.45].forEach(phOff => {
+            const cycle = ((t * 0.18 + off + phOff) % 1);
+            const pos = easeInOut(cycle);
+            const [px, py] = bezierPoint(cnx, cny, mx, my, bx, by, pos);
+            const a = Math.sin(cycle * Math.PI) * 0.4 * fadeIn;
+            if (a > 0.01) {
+              ctx.beginPath(); ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+              ctx.fillStyle = rgba(GREEN, a); ctx.fill();
+            }
+          });
+        });
       }
 
-      // Celtic knot ring around center node
-      if (cP > 0.5) {
-        const ringA = (cP - 0.5) * 2 * 0.12;
-        drawCelticRing(cnx, cny, 32 * pulse + 10, t * 0.02, ringA);
-      }
-
-      /* ═══ LAYER 3 — edges ═══ */
-      const endpoints = [[lx, ly], [rx, ry]];
-      endpoints.forEach(([nx, ny]) => {
-        const ex = cnx + (nx - cnx) * eP;
-        const ey = cny + (ny - cny) * eP;
-        const g = ctx.createLinearGradient(cnx, cny, ex, ey);
-        g.addColorStop(0,   rgba(EMERALD, 0.28 * cP));
-        g.addColorStop(0.5, rgba(EMERALD_L, 0.16 * cP));
-        g.addColorStop(1,   rgba(EMERALD, 0.10 * cP));
-        ctx.beginPath(); ctx.moveTo(cnx, cny); ctx.lineTo(ex, ey);
-        ctx.strokeStyle = g; ctx.lineWidth = 1.2; ctx.stroke();
-      });
-
-      /* ═══ LAYER 4 — energy sparks along edges ═══ */
-      if (t > 2.0 && eP > 0) {
-        const dt = 1 / 60;
-        const fadeIn = clamp((t - 2.0) / 1.5);
-        for (const sp of sparks) {
-          sp.pos += sp.spd * dt;
-          if (sp.pos > 1) { sp.pos -= 1; sp.edge = Math.floor(Math.random() * 2); }
-          const tgt = sp.edge === 0 ? [lx, ly] : [rx, ry];
-          const px = lerp(cnx, tgt[0], sp.pos);
-          const py = lerp(cny, tgt[1], sp.pos);
-          const posA = Math.sin(sp.pos * Math.PI);
-          const a = sp.a * fadeIn * posA * eP;
-          if (a < 0.01) continue;
-          // halo
-          const hg = ctx.createRadialGradient(px, py, 0, px, py, sp.r * 5);
-          hg.addColorStop(0, rgba(sp.color, a * 0.35));
-          hg.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = hg;
-          ctx.beginPath(); ctx.arc(px, py, sp.r * 5, 0, Math.PI * 2); ctx.fill();
-          // core
-          ctx.globalAlpha = a;
-          ctx.fillStyle = rgba(sp.color, 1);
-          ctx.beginPath(); ctx.arc(px, py, sp.r, 0, Math.PI * 2); ctx.fill();
-          ctx.globalAlpha = 1;
-        }
-      }
-
-      /* ═══ LAYER 5 — pulse rings ═══ */
-      if (t > 1.5 && t - lastRing > 4.5) {
-        lastRing = t;
-        rings.push({ t0: t });
-      }
-      for (let i = rings.length - 1; i >= 0; i--) {
-        const age = t - rings[i].t0;
-        if (age > 3.5) { rings.splice(i, 1); continue; }
-        const p = age / 3.5;
-        const r = p * Math.min(W, H) * 0.38;
-        const a = (1 - p) * 0.07 * cP;
-        ctx.beginPath(); ctx.arc(cnx, cny, r, 0, Math.PI * 2);
-        ctx.strokeStyle = rgba(EMERALD, a);
-        ctx.lineWidth = 1 + (1 - p) * 0.5;
-        ctx.stroke();
-        // secondary gold ring slightly behind
-        if (p > 0.05) {
-          const r2 = (p - 0.05) / 0.95 * Math.min(W, H) * 0.38;
-          ctx.beginPath(); ctx.arc(cnx, cny, r2, 0, Math.PI * 2);
-          ctx.strokeStyle = rgba(GOLD, a * 0.35);
-          ctx.lineWidth = 0.6;
-          ctx.stroke();
-        }
+      /* ═══ Child edges — bezier ═══ */
+      if (lP > 0) {
+        [[m1x, m1y, -12], [m2x, m2y, -18]].forEach(([nx, ny, bend]) => {
+          drawEdge(lx, ly, nx, ny, lP, 0.25 * lP, bend);
+        });
       }
 
       /* ═══ NODE — center .ie ═══ */
-      const cR = 32 * pulse;
+      const cR = 28;
 
-      // emerald aura
-      const aG = ctx.createRadialGradient(cnx, cny, cR * 0.4, cnx, cny, cR * 4);
-      aG.addColorStop(0, rgba(EMERALD, 0.16 * cP));
-      aG.addColorStop(0.5, rgba(EMERALD, 0.04 * cP));
-      aG.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = aG; ctx.beginPath(); ctx.arc(cnx, cny, cR * 4, 0, Math.PI * 2); ctx.fill();
+      // very subtle halo
+      const hG = ctx.createRadialGradient(cnx, cny, cR, cnx, cny, cR * 3);
+      hG.addColorStop(0, rgba(GREEN, 0.04 * cP));
+      hG.addColorStop(1, rgba(BG, 0));
+      ctx.fillStyle = hG;
+      ctx.beginPath(); ctx.arc(cnx, cny, cR * 3, 0, Math.PI * 2); ctx.fill();
 
-      // gold accent ring
-      ctx.beginPath(); ctx.arc(cnx, cny, cR + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = rgba(GOLD, 0.22 * cP); ctx.lineWidth = 1; ctx.stroke();
+      // thin outer ring — gold accent
+      ctx.beginPath(); ctx.arc(cnx, cny, cR + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = rgba(GOLD_M, 0.18 * cP); ctx.lineWidth = 0.5; ctx.stroke();
 
-      // emerald accent ring
-      ctx.beginPath(); ctx.arc(cnx, cny, cR + 1.5, 0, Math.PI * 2);
-      ctx.strokeStyle = rgba(EMERALD, 0.18 * cP); ctx.lineWidth = 0.6; ctx.stroke();
-
-      // disc
+      // main circle — thin outlined
       ctx.beginPath(); ctx.arc(cnx, cny, cR, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(IVORY, cP); ctx.fill();
+      ctx.fillStyle = rgba(BG, cP); ctx.fill();
+      ctx.strokeStyle = rgba(INK, 0.55 * cP); ctx.lineWidth = 1; ctx.stroke();
 
       // label
-      ctx.font = '600 14px Georgia, "Palatino Linotype", Palatino, serif';
+      ctx.font = `500 16px ${SERIF}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = rgba(BG, cP); ctx.fillText('.ie', cnx, cny);
+      ctx.fillStyle = rgba(INK, 0.85 * cP);
+      ctx.fillText('.ie', cnx, cny + 1);
 
       /* ═══ NODE — helpers (active) ═══ */
-      const nR = 24 * pulse;
+      const nR = 22;
 
-      // emerald aura
-      const hG = ctx.createRadialGradient(lx, ly, nR * 0.3, lx, ly, nR * 3.2);
-      hG.addColorStop(0, rgba(EMERALD, 0.18 * nP));
-      hG.addColorStop(0.6, rgba(EMERALD, 0.04 * nP));
-      hG.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = hG; ctx.beginPath(); ctx.arc(lx, ly, nR * 3.2, 0, Math.PI * 2); ctx.fill();
-
-      // gold breathing ring (active indicator)
-      const gPulse = 0.18 + 0.12 * Math.sin(t * 1.8);
-      ctx.beginPath(); ctx.arc(lx, ly, nR + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = rgba(GOLD, gPulse * nP); ctx.lineWidth = 1; ctx.stroke();
-
-      // disc
+      // active indicator — subtle green fill
       ctx.beginPath(); ctx.arc(lx, ly, nR, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(IVORY, 0.93 * nP); ctx.fill();
+      ctx.fillStyle = rgba(GREEN, 0.06 * nP); ctx.fill();
+      ctx.strokeStyle = rgba(INK, 0.5 * nP); ctx.lineWidth = 0.8; ctx.stroke();
+
+      // thin gold ring — active marker
+      ctx.beginPath(); ctx.arc(lx, ly, nR + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = rgba(GOLD_M, 0.22 * nP); ctx.lineWidth = 0.5; ctx.stroke();
 
       // label
-      ctx.font = '600 12px Georgia, "Palatino Linotype", Palatino, serif';
+      ctx.font = `500 14px ${SERIF}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = rgba(BG, nP); ctx.fillText('helpers', lx, ly);
+      ctx.fillStyle = rgba(INK, 0.8 * nP);
+      ctx.fillText('helpers', lx, ly + 1);
 
       /* ═══ NODE — nodeadline (link) ═══ */
-      // hover aura
-      if (rHov) {
-        const nG = ctx.createRadialGradient(rx, ry, nR * 0.2, rx, ry, nR * 2.8);
-        nG.addColorStop(0, rgba(EMERALD, 0.14 * nP));
-        nG.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = nG; ctx.beginPath(); ctx.arc(rx, ry, nR * 2.8, 0, Math.PI * 2); ctx.fill();
-      }
+      const hovFade = rHov ? 0.65 : 0.30;
 
       ctx.beginPath(); ctx.arc(rx, ry, nR, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(IVORY, (rHov ? 0.10 : 0.04) * nP); ctx.fill();
-      ctx.strokeStyle = rgba(EMERALD_L, (rHov ? 0.9 : 0.4) * nP); ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = rgba(BG, nP); ctx.fill();
+      ctx.strokeStyle = rgba(WARM, hovFade * nP);
+      ctx.lineWidth = rHov ? 1 : 0.7; ctx.stroke();
 
-      ctx.font = '400 13px Georgia, "Palatino Linotype", Palatino, serif';
+      // label below
+      ctx.font = `400 14px ${SERIF}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillStyle = rgba(EMERALD_L, (rHov ? 1 : 0.55) * nP);
-      ctx.fillText(rHov ? 'nodeadline \u2197' : 'nodeadline', rx, ry + nR + 14);
+      ctx.fillStyle = rgba(INK, (rHov ? 0.7 : 0.4) * nP);
+      ctx.fillText('nodeadline', rx, ry + nR + 10);
+      if (rHov) {
+        const tw = ctx.measureText('nodeadline').width;
+        ctx.fillStyle = rgba(WARM, 0.45 * nP);
+        ctx.fillText('\u2197', rx + tw / 2 + 6, ry + nR + 10);
+      }
 
-      /* ═══ NODE — helpers children ═══ */
+      /* ═══ NODES — children ═══ */
       if (lP > 0) {
         [[m1x, m1y, 'material'], [m2x, m2y, 'intangible']].forEach(([nx, ny, label]) => {
-          // edge
-          const eG = ctx.createLinearGradient(lx, ly, nx, ny);
-          eG.addColorStop(0, rgba(EMERALD, 0.22 * lP));
-          eG.addColorStop(1, rgba(EMERALD, 0.06 * lP));
-          ctx.beginPath(); ctx.moveTo(lx, ly);
-          ctx.lineTo(lx + (nx - lx) * lP, ly + (ny - ly) * lP);
-          ctx.strokeStyle = eG; ctx.lineWidth = 1; ctx.stroke();
+          const r = 12;
+          ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2);
+          ctx.fillStyle = rgba(BG, lP); ctx.fill();
+          ctx.strokeStyle = rgba(WARM, 0.35 * lP); ctx.lineWidth = 0.6; ctx.stroke();
 
-          // ring
-          ctx.beginPath(); ctx.arc(nx, ny, 14, 0, Math.PI * 2);
-          ctx.fillStyle = rgba(IVORY, 0.04 * lP); ctx.fill();
-          ctx.strokeStyle = rgba(EMERALD_L, 0.35 * lP); ctx.lineWidth = 0.8; ctx.stroke();
-
-          // gold core dot
-          ctx.beginPath(); ctx.arc(nx, ny, 1.8, 0, Math.PI * 2);
-          ctx.fillStyle = rgba(GOLD, 0.3 * lP); ctx.fill();
+          // tiny green center dot
+          ctx.beginPath(); ctx.arc(nx, ny, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = rgba(GREEN, 0.3 * lP); ctx.fill();
 
           // label
-          ctx.font = '400 11px Georgia, "Palatino Linotype", Palatino, serif';
-          ctx.textAlign = nx < lx ? 'right' : 'left'; ctx.textBaseline = 'middle';
-          ctx.fillStyle = rgba(EMERALD_L, 0.5 * lP);
-          ctx.fillText(label, nx < lx ? nx - 22 : nx + 22, ny);
+          ctx.font = `400 12px ${SERIF}`;
+          ctx.textAlign = nx < lx ? 'right' : 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = rgba(INK, 0.45 * lP);
+          ctx.fillText(label, nx < lx ? nx - 20 : nx + 20, ny);
         });
       }
 
