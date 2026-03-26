@@ -7,9 +7,187 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
-    canvas { display: block; }
+    canvas { display: block; touch-action: none; }
   </style>
 </head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    let W, H, cx, cy;
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.scale(dpr, dpr);
+      cx = W / 2;
+      cy = H / 2;
+    }
+    resize();
+    window.addEventListener('resize', () => { ctx.resetTransform(); resize(); });
+
+    const startTime = performance.now();
+    const pointer = { x: -999, y: -999 };
+
+    function getLayout() {
+      const portrait = H > W * 1.2;
+      const s = Math.min(W, H);
+      if (portrait) {
+        const sp = s * 0.30;
+        return {
+          cnx: cx,            cny: H * 0.22,
+          lx:  cx - sp * 0.9, ly:  H * 0.52,
+          rx:  cx + sp * 0.9, ry:  H * 0.52,
+          m1x: cx - sp * 1.4, m1y: H * 0.52 - sp * 0.5,
+          m2x: cx - sp * 1.5, m2y: H * 0.52 + sp * 0.35,
+        };
+      } else {
+        const sp = s * 0.30;
+        const cs = s * 0.18;
+        return {
+          cnx: cx,          cny: cy - sp * 0.18,
+          lx:  cx - sp,     ly:  cy + sp * 0.55,
+          rx:  cx + sp,     ry:  cy + sp * 0.55,
+          m1x: cx - sp - cs * 0.75, m1y: cy + sp * 0.55 - cs * 0.9,
+          m2x: cx - sp - cs * 1.1,  m2y: cy + sp * 0.55 + cs * 0.2,
+        };
+      }
+    }
+
+    function hitNodeadline() {
+      const { rx, ry } = getLayout();
+      return Math.hypot(pointer.x - rx, pointer.y - ry) < 44;
+    }
+
+    canvas.addEventListener('mousemove', e => { pointer.x = e.clientX; pointer.y = e.clientY; });
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      pointer.x = e.touches[0].clientX;
+      pointer.y = e.touches[0].clientY;
+    }, { passive: false });
+    canvas.addEventListener('touchstart', e => {
+      pointer.x = e.touches[0].clientX;
+      pointer.y = e.touches[0].clientY;
+    }, { passive: true });
+
+    function openNodeadline() { if (hitNodeadline()) window.open('https://nodeadline.ie', '_blank'); }
+    canvas.addEventListener('click', openNodeadline);
+    canvas.addEventListener('touchend', e => {
+      pointer.x = e.changedTouches[0].clientX;
+      pointer.y = e.changedTouches[0].clientY;
+      openNodeadline();
+    });
+
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function clamp(v) { return Math.max(0, Math.min(1, v)); }
+
+    function drawNode(x, y, r, fill, stroke, alpha) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+    }
+
+    function frame(now) {
+      const t = (now - startTime) / 1000;
+      ctx.clearRect(0, 0, W, H);
+
+      const { cnx, cny, lx, ly, rx, ry, m1x, m1y, m2x, m2y } = getLayout();
+
+      const cPhase = easeOut(clamp(t / 0.7));
+      const ePhase = easeOut(clamp((t - 0.7) / 0.9));
+      const nPhase = easeOut(clamp((t - 1.5) / 0.6));
+      const lPhase = easeOut(clamp((t - 2.5) / 0.8));
+      const pulse  = 1 + Math.sin(t * 1.6) * 0.025;
+      const rHov   = hitNodeadline();
+      canvas.style.cursor = rHov ? 'pointer' : 'default';
+
+      // Edges: center → helpers, center → nodeadline
+      [[lx, ly], [rx, ry]].forEach(([nx, ny]) => {
+        ctx.beginPath();
+        ctx.moveTo(cnx, cny);
+        ctx.lineTo(cnx + (nx - cnx) * ePhase, cny + (ny - cny) * ePhase);
+        ctx.strokeStyle = `rgba(255,255,255,${0.13 * cPhase})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Signal dots
+      if (t > 2.2) {
+        [[lx, ly, 0], [rx, ry, 1.4]].forEach(([nx, ny, off]) => {
+          const cycle = ((t - 2.2 + off) % 3.5) / 3.5;
+          if (cycle < 0.55) {
+            const p = easeOut(cycle / 0.55);
+            ctx.beginPath();
+            ctx.arc(cnx + (nx - cnx) * p, cny + (ny - cny) * p, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${0.55 * (1 - p)})`;
+            ctx.fill();
+          }
+        });
+      }
+
+      // Center node .ie
+      const cr = 32 * pulse;
+      drawNode(cnx, cny, cr, `rgba(255,255,255,${cPhase})`, null);
+      ctx.font = '600 13px system-ui,-apple-system,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(10,10,10,${cPhase})`;
+      ctx.fillText('.ie', cnx, cny);
+
+      const nr = 24 * pulse;
+
+      // helpers — active (filled)
+      drawNode(lx, ly, nr, `rgba(255,255,255,${0.92 * nPhase})`, null);
+      ctx.font = '600 12px system-ui,-apple-system,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(10,10,10,${nPhase})`;
+      ctx.fillText('helpers', lx, ly);
+
+      // nodeadline — clickable link
+      drawNode(rx, ry, nr,
+        `rgba(255,255,255,${(rHov ? 0.12 : 0.06) * nPhase})`,
+        `rgba(255,255,255,${(rHov ? 0.95 : 0.55) * nPhase})`
+      );
+      ctx.font = '400 13px system-ui,-apple-system,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillStyle = `rgba(255,255,255,${(rHov ? 1 : 0.65) * nPhase})`;
+      ctx.fillText(rHov ? 'nodeadline ↗' : 'nodeadline', rx, ry + nr + 14);
+
+      // helpers child nodes
+      if (lPhase > 0) {
+        [[m1x, m1y, 'material'], [m2x, m2y, 'intangible']].forEach(([nx, ny, label]) => {
+          ctx.beginPath();
+          ctx.moveTo(lx, ly);
+          ctx.lineTo(lx + (nx - lx) * lPhase, ly + (ny - ly) * lPhase);
+          ctx.strokeStyle = `rgba(255,255,255,${0.15 * lPhase})`;
+          ctx.lineWidth = 1; ctx.stroke();
+
+          drawNode(nx, ny, 14,
+            `rgba(255,255,255,${0.08 * lPhase})`,
+            `rgba(255,255,255,${0.4 * lPhase})`
+          );
+          ctx.font = '400 11px system-ui,-apple-system,sans-serif';
+          ctx.textAlign = nx < lx ? 'right' : 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = `rgba(255,255,255,${0.5 * lPhase})`;
+          const pad = 14 + 8;
+          ctx.fillText(label, nx < lx ? nx - pad : nx + pad, ny);
+        });
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
 <body>
   <canvas id="c"></canvas>
   <script>
