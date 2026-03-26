@@ -6,8 +6,8 @@
   <title>helpers.ie</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
-    canvas { display: block; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #f0ebe2; }
+    canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
   </style>
 </head>
 <body>
@@ -29,300 +29,124 @@
 
     const T0 = performance.now();
 
-    /* ── Colors ── */
-    const GOLD   = '#c9a84c';
-    const GOLD_D = '#8a7234';
-    const GREEN  = '#2d8a4e';
-    const GREEN_L= '#4caf78';
-    const GREEN_D= '#1a5c35';
-    const BG     = '#0a0a0a';
-    const CREAM  = '#e8dcc8';
-
-    /* ── Celtic Knot: draws an endless interlace band along a path ── */
-    function knotBand(pts, width, t, alpha) {
-      if (pts.length < 2) return;
-      X.save();
-      X.globalAlpha = alpha;
-      // Two strands weaving
-      for (let strand = 0; strand < 2; strand++) {
-        const off = strand === 0 ? width * 0.35 : -width * 0.35;
-        const waveAmp = width * 0.3;
-        const waveFreq = 0.035;
-
-        X.beginPath();
-        for (let i = 0; i < pts.length; i++) {
-          const [px, py] = pts[i];
-          // tangent direction
-          const next = pts[Math.min(i + 1, pts.length - 1)];
-          const prev = pts[Math.max(i - 1, 0)];
-          const dx = next[0] - prev[0], dy = next[1] - prev[1];
-          const len = Math.sqrt(dx * dx + dy * dy) || 1;
-          const nx = -dy / len, ny = dx / len;
-
-          const wave = Math.sin(i * waveFreq * Math.PI * 2 + t * 0.5 + strand * Math.PI) * waveAmp;
-          const x = px + nx * (off + wave);
-          const y = py + ny * (off + wave);
-          i === 0 ? X.moveTo(x, y) : X.lineTo(x, y);
-        }
-        X.strokeStyle = strand === 0 ? GOLD : GOLD_D;
-        X.lineWidth = width * 0.18;
-        X.lineCap = 'round';
-        X.stroke();
-
-        // inner highlight
-        X.strokeStyle = strand === 0 ? '#e0cc80' : GOLD;
-        X.lineWidth = width * 0.06;
-        X.globalAlpha = alpha * 0.5;
-        X.stroke();
-        X.globalAlpha = alpha;
+    /* ── Gradient Blobs ── */
+    const blobs = [
+      { // emerald green — Irish green
+        x: 0.2, y: 0.3, r: 0.38,
+        vx: 0.012, vy: 0.008,
+        color: [30, 120, 60],
+        phase: 0
+      },
+      { // gold — Celtic gold
+        x: 0.75, y: 0.25, r: 0.32,
+        vx: -0.009, vy: 0.011,
+        color: [195, 165, 55],
+        phase: 1.2
+      },
+      { // deep purple — Book of Kells
+        x: 0.15, y: 0.15, r: 0.35,
+        vx: 0.007, vy: -0.006,
+        color: [110, 60, 170],
+        phase: 2.4
+      },
+      { // warm coral/rose
+        x: 0.55, y: 0.45, r: 0.4,
+        vx: -0.008, vy: 0.007,
+        color: [210, 90, 100],
+        phase: 3.6
+      },
+      { // dark olive — earth
+        x: 0.8, y: 0.75, r: 0.34,
+        vx: 0.006, vy: -0.01,
+        color: [130, 120, 55],
+        phase: 4.8
+      },
+      { // mauve/plum
+        x: 0.35, y: 0.8, r: 0.3,
+        vx: -0.011, vy: -0.005,
+        color: [160, 80, 140],
+        phase: 5.5
       }
-      X.restore();
-    }
+    ];
 
-    /* ── Triskelion ── */
-    function triskelion(cx, cy, size, rot, color, alpha, lw) {
-      X.save();
-      X.translate(cx, cy); X.rotate(rot);
-      X.globalAlpha = alpha;
-      X.strokeStyle = color;
-      X.lineWidth = lw;
-      X.lineCap = 'round';
-      for (let arm = 0; arm < 3; arm++) {
-        const base = (arm / 3) * Math.PI * 2;
-        X.beginPath();
-        // arm outward
-        const armLen = size * 0.5;
-        const steps = 60;
-        for (let i = 0; i <= steps; i++) {
-          const f = i / steps;
-          const r = f * armLen;
-          const bend = Math.sin(f * Math.PI) * 0.35;
-          const a = base + bend;
-          const x = Math.cos(a) * r, y = Math.sin(a) * r;
-          i === 0 ? X.moveTo(x, y) : X.lineTo(x, y);
-        }
-        // spiral at tip
-        const tipA = base + Math.sin(Math.PI) * 0.35;
-        const tipX = Math.cos(tipA) * armLen;
-        const tipY = Math.sin(tipA) * armLen;
-        const spR = size * 0.28;
-        const scX = tipX + Math.cos(base + Math.PI * 0.5) * spR * 0.3;
-        const scY = tipY + Math.sin(base + Math.PI * 0.5) * spR * 0.3;
-        for (let i = 1; i <= 70; i++) {
-          const f = i / 70;
-          const a = base + Math.PI * 0.5 + f * 1.8 * Math.PI * 2;
-          const r = spR * (1 - f);
-          X.lineTo(scX + Math.cos(a) * r, scY + Math.sin(a) * r);
-        }
-        X.stroke();
+    /* ── Noise grain texture ── */
+    let grainCanvas, grainCtx;
+    function makeGrain() {
+      grainCanvas = document.createElement('canvas');
+      grainCanvas.width = 256; grainCanvas.height = 256;
+      grainCtx = grainCanvas.getContext('2d');
+      const img = grainCtx.createImageData(256, 256);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255;
+        d[i] = d[i+1] = d[i+2] = v;
+        d[i+3] = 18;
       }
-      X.globalAlpha = 1; X.restore();
+      grainCtx.putImageData(img, 0, 0);
     }
+    makeGrain();
 
-    /* ── Spiral flourish ── */
-    function spiral(cx, cy, maxR, turns, rot, color, alpha, lw) {
-      X.save(); X.translate(cx, cy); X.rotate(rot);
-      X.globalAlpha = alpha; X.strokeStyle = color; X.lineWidth = lw; X.lineCap = 'round';
-      X.beginPath();
-      for (let i = 0; i <= 200; i++) {
-        const f = i / 200;
-        const a = f * turns * Math.PI * 2;
-        const r = f * maxR;
-        i === 0 ? X.moveTo(Math.cos(a) * r, Math.sin(a) * r) : X.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-      }
-      X.stroke(); X.globalAlpha = 1; X.restore();
-    }
-
-    /* ── Circular knotwork border ── */
-    function circleKnot(cx, cy, radius, bandW, t, alpha) {
-      const pts = [];
-      const n = 360;
-      for (let i = 0; i <= n; i++) {
-        const a = (i / n) * Math.PI * 2;
-        pts.push([cx + Math.cos(a) * radius, cy + Math.sin(a) * radius]);
-      }
-      knotBand(pts, bandW, t, alpha);
-    }
-
-    /* ── Rectangle knotwork border ── */
-    function rectKnot(x, y, w, h, bandW, t, alpha, cornerR) {
-      const pts = [];
-      const steps = 600;
-      const r = cornerR || 20;
-      // generate points along rounded rectangle
-      for (let i = 0; i <= steps; i++) {
-        const f = i / steps;
-        const perim = 2 * (w + h) - 8 * r + 2 * Math.PI * r;
-        let d = f * perim;
-        let px, py;
-        const sides = [
-          { len: w - 2 * r, dx: 1, dy: 0, sx: x + r, sy: y },
-          { arc: true, cx: x + w - r, cy: y + r, sa: -Math.PI / 2, ea: 0 },
-          { len: h - 2 * r, dx: 0, dy: 1, sx: x + w, sy: y + r },
-          { arc: true, cx: x + w - r, cy: y + h - r, sa: 0, ea: Math.PI / 2 },
-          { len: w - 2 * r, dx: -1, dy: 0, sx: x + w - r, sy: y + h },
-          { arc: true, cx: x + r, cy: y + h - r, sa: Math.PI / 2, ea: Math.PI },
-          { len: h - 2 * r, dx: 0, dy: -1, sx: x, sy: y + h - r },
-          { arc: true, cx: x + r, cy: y + r, sa: Math.PI, ea: Math.PI * 1.5 },
-        ];
-        let acc = 0;
-        for (const seg of sides) {
-          if (seg.arc) {
-            const arcLen = r * Math.PI / 2;
-            if (d <= acc + arcLen) {
-              const frac = (d - acc) / arcLen;
-              const a = seg.sa + frac * (seg.ea - seg.sa);
-              px = seg.cx + Math.cos(a) * r;
-              py = seg.cy + Math.sin(a) * r;
-              break;
-            }
-            acc += arcLen;
-          } else {
-            if (d <= acc + seg.len) {
-              const frac = (d - acc) / seg.len;
-              px = seg.sx + seg.dx * frac * seg.len;
-              py = seg.sy + seg.dy * frac * seg.len;
-              break;
-            }
-            acc += seg.len;
-          }
-        }
-        if (px !== undefined) pts.push([px, py]);
-      }
-      if (pts.length > 10) knotBand(pts, bandW, t, alpha);
-    }
-
-    /* ── Celtic cross arms decoration ── */
-    function crossArm(cx, cy, length, angle, width, t, alpha) {
-      X.save(); X.translate(cx, cy); X.rotate(angle);
-      X.globalAlpha = alpha;
-      // main bar
-      X.fillStyle = GOLD_D;
-      X.fillRect(-width / 2, 0, width, length);
-      // interlace pattern
-      const steps = Math.floor(length / 8);
-      for (let i = 0; i < steps; i++) {
-        const y = i * 8 + 4;
-        const wave = Math.sin(i * 0.8 + t * 0.6) * width * 0.25;
-        X.beginPath();
-        X.arc(wave, y, 2, 0, Math.PI * 2);
-        X.fillStyle = i % 2 === 0 ? GOLD : GREEN;
-        X.fill();
-      }
-      X.globalAlpha = 1; X.restore();
-    }
-
-    /* ── Main frame ── */
     function frame(now) {
       const t = (now - T0) / 1000;
-      X.fillStyle = BG; X.fillRect(0, 0, W, H);
-
-      const cx = W / 2, cy = H / 2;
       const s = Math.min(W, H);
 
-      // heartbeat for text
-      const beat = t % 4;
-      let textA;
-      if (beat < 0.12) textA = 0.35 + 0.65 * (beat / 0.12);
-      else if (beat < 0.25) textA = 1 - 0.55 * ((beat - 0.12) / 0.13);
-      else if (beat < 0.37) textA = 0.45 + 0.45 * ((beat - 0.25) / 0.12);
-      else if (beat < 0.55) textA = 0.9 - 0.55 * ((beat - 0.37) / 0.18);
-      else textA = 0.35;
+      /* ── Background ── */
+      X.fillStyle = '#f0ebe2';
+      X.fillRect(0, 0, W, H);
 
-      // ornament pulse (gentle)
-      const oPulse = 0.6 + 0.4 * Math.sin(t * 0.8);
+      /* ── Draw blobs ── */
+      for (const b of blobs) {
+        // Organic drifting motion
+        const bx = (b.x + Math.sin(t * b.vx * 2 + b.phase) * 0.15 +
+                    Math.sin(t * b.vy * 1.3 + b.phase * 0.7) * 0.08) * W;
+        const by = (b.y + Math.cos(t * b.vy * 2 + b.phase + 1) * 0.12 +
+                    Math.cos(t * b.vx * 1.7 + b.phase * 1.3) * 0.06) * H;
+        const br = b.r * s * (0.9 + Math.sin(t * 0.3 + b.phase) * 0.1);
 
-      /* ═══ LAYER 1 — Large triskelions in corners ═══ */
-      const triSize = s * 0.18;
-      const corners = [
-        [s * 0.12, s * 0.12],
-        [W - s * 0.12, s * 0.12],
-        [s * 0.12, H - s * 0.12],
-        [W - s * 0.12, H - s * 0.12],
-      ];
-      corners.forEach(([x, y], i) => {
-        triskelion(x, y, triSize, t * 0.03 + i * Math.PI / 2, GOLD_D, 0.25 * oPulse, 1.2);
-        // glow layer
-        triskelion(x, y, triSize, t * 0.03 + i * Math.PI / 2, GOLD, 0.08 * oPulse, 3);
-      });
+        const g = X.createRadialGradient(bx, by, 0, bx, by, br);
+        const [r, gn, bl] = b.color;
+        g.addColorStop(0, `rgba(${r},${gn},${bl},0.65)`);
+        g.addColorStop(0.4, `rgba(${r},${gn},${bl},0.35)`);
+        g.addColorStop(0.7, `rgba(${r},${gn},${bl},0.1)`);
+        g.addColorStop(1, `rgba(${r},${gn},${bl},0)`);
 
-      /* ═══ LAYER 2 — Circle knotwork behind text ═══ */
-      const cR = s * 0.22;
-      circleKnot(cx, cy, cR, s * 0.025, t, 0.3 * oPulse);
-      // inner ring
-      circleKnot(cx, cy, cR * 0.72, s * 0.015, t * 0.7, 0.2 * oPulse);
-
-      /* ═══ LAYER 3 — Spirals radiating from center ═══ */
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2 + t * 0.02;
-        const dist = cR + s * 0.05;
-        const sx = cx + Math.cos(a) * dist;
-        const sy = cy + Math.sin(a) * dist;
-        spiral(sx, sy, s * 0.04, 2.5, a + Math.PI, i % 2 === 0 ? GREEN_D : GOLD_D, 0.22 * oPulse, 0.8);
-      }
-
-      /* ═══ LAYER 4 — Border knotwork frame ═══ */
-      const pad = s * 0.06;
-      rectKnot(pad, pad, W - pad * 2, H - pad * 2, s * 0.02, t, 0.2 * oPulse, s * 0.05);
-
-      /* ═══ LAYER 5 — Corner spirals (large) ═══ */
-      spiral(0, 0, s * 0.14, 3, t * 0.015, GREEN_D, 0.18, 1);
-      spiral(W, 0, s * 0.14, 3, -t * 0.015 + Math.PI, GREEN_D, 0.18, 1);
-      spiral(0, H, s * 0.14, 3, -t * 0.015 + Math.PI / 2, GREEN_D, 0.18, 1);
-      spiral(W, H, s * 0.14, 3, t * 0.015 + Math.PI * 1.5, GREEN_D, 0.18, 1);
-
-      /* ═══ LAYER 6 — Interlace cross through center ═══ */
-      [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach((a, i) => {
-        const len = cR * 0.3;
-        crossArm(cx, cy, len, a, 6, t, 0.3 * oPulse);
-      });
-
-      /* ═══ LAYER 7 — Floating knotwork dots ═══ */
-      for (let i = 0; i < 24; i++) {
-        const a = (i / 24) * Math.PI * 2;
-        const r = cR * (0.85 + 0.15 * Math.sin(t * 0.5 + i * 0.7));
-        const x = cx + Math.cos(a + t * 0.02) * r;
-        const y = cy + Math.sin(a + t * 0.02) * r;
-        const dotR = 2 + Math.sin(t * 1.2 + i) * 0.8;
-
-        // gold dot
-        X.beginPath(); X.arc(x, y, dotR, 0, Math.PI * 2);
-        X.fillStyle = GOLD;
-        X.globalAlpha = 0.3 * oPulse;
-        X.fill();
-
-        // green glow
-        const g = X.createRadialGradient(x, y, 0, x, y, dotR * 4);
-        g.addColorStop(0, 'rgba(45,138,78,0.15)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
         X.fillStyle = g;
-        X.globalAlpha = oPulse;
-        X.beginPath(); X.arc(x, y, dotR * 4, 0, Math.PI * 2); X.fill();
-        X.globalAlpha = 1;
+        X.fillRect(0, 0, W, H);
       }
 
-      /* ═══ LAYER 8 — Center triskelion (large, behind text) ═══ */
-      triskelion(cx, cy, cR * 0.55, -t * 0.02, GREEN, 0.12 * oPulse, 1.5);
-      triskelion(cx, cy, cR * 0.55, -t * 0.02, GREEN_L, 0.04 * oPulse, 4);
+      /* ── Grain overlay ── */
+      X.globalAlpha = 1;
+      const pat = X.createPattern(grainCanvas, 'repeat');
+      X.fillStyle = pat;
+      X.fillRect(0, 0, W, H);
 
-      /* ═══ TEXT — help is on the way ═══ */
-      const fontSize = Math.round(s * 0.035);
-      X.font = `300 ${fontSize}px system-ui, -apple-system, sans-serif`;
-      X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.letterSpacing = '0.06em';
+      /* ── Text ── */
+      const fontSize = Math.round(s * 0.13);
+      X.save();
+      X.globalCompositeOperation = 'color-burn';
+      X.font = `700 ${fontSize}px 'Georgia', 'Times New Roman', serif`;
+      X.textAlign = 'center';
+      X.textBaseline = 'middle';
 
-      // text glow
-      X.globalAlpha = textA * 0.3;
-      X.shadowColor = GOLD;
-      X.shadowBlur = 20;
-      X.fillStyle = GOLD;
-      X.fillText('help is on the way', cx, cy);
+      // measure for two-line layout
+      const line1 = 'help is';
+      const line2 = 'on the way';
+      const leading = fontSize * 1.05;
+      const cy = H / 2;
 
-      // main text
-      X.shadowBlur = 0;
-      X.globalAlpha = textA;
-      X.fillStyle = CREAM;
-      X.fillText('help is on the way', cx, cy);
+      X.fillStyle = '#1a1a2e';
+      X.fillText(line1, W / 2, cy - leading * 0.45);
+      X.fillText(line2, W / 2, cy + leading * 0.55);
+      X.restore();
+
+      /* ── Subtle subtext ── */
+      X.globalAlpha = 0.4;
+      X.font = `400 ${Math.round(s * 0.015)}px system-ui, -apple-system, sans-serif`;
+      X.textAlign = 'center';
+      X.textBaseline = 'middle';
+      X.fillStyle = '#5a5a5a';
+      X.letterSpacing = '0.2em';
+      X.fillText('HELPERS.IE', W / 2, H * 0.92);
       X.globalAlpha = 1;
 
       requestAnimationFrame(frame);
