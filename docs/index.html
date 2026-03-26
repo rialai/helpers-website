@@ -57,9 +57,15 @@
       const cPhase = easeOut(clamp(t / 0.7));
       const ePhase = easeOut(clamp((t - 0.7) / 0.9));
       const nPhase = easeOut(clamp((t - 1.5) / 0.6));
+      const lPhase = easeOut(clamp((t - 2.5) / 0.8));
       const pulse  = 1 + Math.sin(t * 1.6) * 0.025;
       const rHov   = Math.hypot(mouse.x - rx, mouse.y - ry) < 40;
       canvas.style.cursor = rHov ? 'pointer' : 'default';
+
+      // child nodes of helpers
+      const childSpread = Math.min(W, H) * 0.18;
+      const m1x = lx - childSpread * 0.75, m1y = ly - childSpread * 0.9;  // material — upper left
+      const m2x = lx - childSpread * 1.1,  m2y = ly + childSpread * 0.2;  // intangible — lower left
 
       // Edges
       [[lx, ly], [rx, ry]].forEach(([nx, ny]) => {
@@ -125,6 +131,38 @@
       ctx.textBaseline = 'top';
       ctx.fillStyle = `rgba(255,255,255,${(rHov ? 1 : 0.65) * nPhase})`;
       ctx.fillText(rHov ? 'nodeadline ↗' : 'nodeadline', rx, ry + nr + 14);
+
+      // helpers child nodes: material + intangible
+      if (lPhase > 0) {
+        [[m1x, m1y, 'material'], [m2x, m2y, 'intangible']].forEach(([nx, ny, label]) => {
+          // edge from helpers
+          ctx.beginPath();
+          ctx.moveTo(lx, ly);
+          ctx.lineTo(lx + (nx - lx) * lPhase, ly + (ny - ly) * lPhase);
+          ctx.strokeStyle = `rgba(255,255,255,${0.15 * lPhase})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // node
+          const snr = 14;
+          ctx.beginPath();
+          ctx.arc(nx, ny, snr, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${0.08 * lPhase})`;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(nx, ny, snr, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255,255,255,${0.4 * lPhase})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // label
+          ctx.font = '400 11px system-ui,-apple-system,sans-serif';
+          ctx.textAlign = nx < lx ? 'right' : 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = `rgba(255,255,255,${0.5 * lPhase})`;
+          ctx.fillText(label, nx - (nx < lx ? snr + 8 : 0), ny);
+        });
+      }
 
       requestAnimationFrame(frame);
     }
