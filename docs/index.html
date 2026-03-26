@@ -7,7 +7,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #f0ebe2; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #14181e; }
     canvas { display: block; touch-action: none; }
   </style>
 </head>
@@ -32,13 +32,16 @@
     const startTime = performance.now();
     const pointer = { x: -999, y: -999 };
 
-    /* ── Palette — warm, muted, ARETE-inspired ── */
-    const INK    = [38, 35, 30];       // dark warm charcoal
-    const WARM   = [160, 148, 130];    // warm gray for lines
-    const FAINT  = [195, 185, 168];    // fainter warm gray
-    const BG     = [240, 235, 226];    // cream background
-    const GREEN  = [58, 105, 78];      // muted forest — Celtic accent
-    const GOLD_M = [168, 142, 90];     // muted gold
+    /* ── Palette — dark, ARETE-style with Celtic accent ── */
+    const BG     = [20, 24, 30];        // dark blue-black (ARETE #181c22 adapted)
+    const LINE   = [55, 70, 65];        // muted teal-gray for edges
+    const LINE_L = [75, 95, 88];        // lighter line variant
+    const TEXT   = [190, 198, 210];     // cool light gray for text
+    const TEXT_D = [130, 140, 155];     // dimmer text
+    const GREEN  = [50, 160, 100];      // Celtic emerald accent
+    const GREEN_D= [35, 110, 72];       // darker emerald
+    const GOLD   = [180, 155, 90];      // warm gold accent
+    const WHITE  = [230, 235, 240];     // near-white
 
     const SERIF = '"EB Garamond", Georgia, "Palatino Linotype", Palatino, serif';
 
@@ -134,8 +137,18 @@
       ctx.save();
       ctx.translate(x, y); ctx.rotate(rot);
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      // soft glow
+      ctx.globalAlpha = alpha * 0.3;
+      ctx.strokeStyle = rgba(GREEN_D, 1);
+      ctx.lineWidth = 2.5;
+      for (const pts of paths) {
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.stroke();
+      }
+      // crisp
       ctx.globalAlpha = alpha;
-      ctx.strokeStyle = rgba(FAINT, 0.6);
+      ctx.strokeStyle = rgba(GREEN_D, 0.5);
       ctx.lineWidth = 0.7;
       for (const pts of paths) {
         ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
@@ -146,22 +159,24 @@
       ctx.restore();
     }
 
-    /* ── Bezier edge from A to B with organic curve ── */
+    /* ── Bezier edge ── */
+    function getControlPoint(ax, ay, bx, by, bend) {
+      return [(ax + bx) / 2 + bend, (ay + by) / 2 - Math.abs(bend) * 0.5];
+    }
+
     function drawEdge(ax, ay, bx, by, progress, alpha, bend) {
       const ex = ax + (bx - ax) * progress;
       const ey = ay + (by - ay) * progress;
-      const mx = (ax + ex) / 2 + bend;
-      const my = (ay + ey) / 2 - Math.abs(bend) * 0.5;
+      const [mx, my] = getControlPoint(ax, ay, ex, ey, bend * progress);
       ctx.beginPath();
       ctx.moveTo(ax, ay);
       ctx.quadraticCurveTo(mx, my, ex, ey);
-      ctx.strokeStyle = rgba(WARM, alpha);
+      ctx.strokeStyle = rgba(LINE, alpha);
       ctx.lineWidth = 0.8;
       ctx.stroke();
     }
 
-    /* ── Flowing dot along a bezier ── */
-    function bezierPoint(ax, ay, mx, my, bx, by, t) {
+    function bezierPt(ax, ay, mx, my, bx, by, t) {
       const u = 1 - t;
       return [u * u * ax + 2 * u * t * mx + t * t * bx, u * u * ay + 2 * u * t * my + t * t * by];
     }
@@ -170,7 +185,7 @@
     function frame(now) {
       const t = (now - startTime) / 1000;
 
-      // clear to warm cream
+      // dark background
       ctx.fillStyle = rgba(BG, 1);
       ctx.fillRect(0, 0, W, H);
 
@@ -183,104 +198,144 @@
       const rHov = hitNodeadline();
       canvas.style.cursor = rHov ? 'pointer' : 'default';
 
+      /* ═══ Subtle radial ambient ═══ */
+      if (cP > 0) {
+        const g = ctx.createRadialGradient(cnx, cny, 0, cnx, cny, Math.min(W, H) * 0.65);
+        g.addColorStop(0,   rgba([25, 38, 32], 0.35 * cP));
+        g.addColorStop(0.5, rgba([22, 30, 28], 0.15 * cP));
+        g.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+      }
+
       /* ═══ Triskelion watermark ═══ */
-      const triA = Math.min(cP * 0.5, 0.16);
+      const triA = Math.min(cP * 0.55, 0.09);
       const triS = Math.min(W, H) * 0.28;
       drawTriskelion(cnx, cny, triS, t * 0.015, triA);
 
-      /* ═══ Edges — organic bezier curves ═══ */
-      const bendL = -25, bendR = 25;
+      /* ═══ Edges ═══ */
+      const bendL = -28, bendR = 28;
       if (eP > 0) {
-        drawEdge(cnx, cny, lx, ly, eP, 0.35 * cP, bendL);
-        drawEdge(cnx, cny, rx, ry, eP, 0.35 * cP, bendR);
+        // glow underlayer
+        ctx.save();
+        [[lx, ly, bendL], [rx, ry, bendR]].forEach(([bx, by, bend]) => {
+          const ex = cnx + (bx - cnx) * eP;
+          const ey = cny + (by - cny) * eP;
+          const [mx, my] = getControlPoint(cnx, cny, ex, ey, bend * eP);
+          ctx.beginPath(); ctx.moveTo(cnx, cny); ctx.quadraticCurveTo(mx, my, ex, ey);
+          ctx.strokeStyle = rgba(GREEN_D, 0.08 * cP); ctx.lineWidth = 3; ctx.stroke();
+        });
+        ctx.restore();
+        // main lines
+        drawEdge(cnx, cny, lx, ly, eP, 0.4 * cP, bendL);
+        drawEdge(cnx, cny, rx, ry, eP, 0.4 * cP, bendR);
       }
 
-      /* ═══ Flowing dots along edges ═══ */
+      /* ═══ Flowing dots ═══ */
       if (t > 2.2 && eP > 0.5) {
         const fadeIn = clamp((t - 2.2) / 2);
         [[lx, ly, bendL, 0], [rx, ry, bendR, 2.1]].forEach(([bx, by, bend, off]) => {
-          const mx = (cnx + bx) / 2 + bend;
-          const my = (cny + by) / 2 - Math.abs(bend) * 0.5;
-          // two dots per edge, offset in time
+          const [mx, my] = getControlPoint(cnx, cny, bx, by, bend);
           [0, 0.45].forEach(phOff => {
-            const cycle = ((t * 0.18 + off + phOff) % 1);
+            const cycle = ((t * 0.16 + off + phOff) % 1);
             const pos = easeInOut(cycle);
-            const [px, py] = bezierPoint(cnx, cny, mx, my, bx, by, pos);
-            const a = Math.sin(cycle * Math.PI) * 0.4 * fadeIn;
+            const [px, py] = bezierPt(cnx, cny, mx, my, bx, by, pos);
+            const a = Math.sin(cycle * Math.PI) * 0.55 * fadeIn;
             if (a > 0.01) {
-              ctx.beginPath(); ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+              // glow
+              const dg = ctx.createRadialGradient(px, py, 0, px, py, 6);
+              dg.addColorStop(0, rgba(GREEN, a * 0.4));
+              dg.addColorStop(1, 'rgba(0,0,0,0)');
+              ctx.fillStyle = dg;
+              ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
+              // core
+              ctx.beginPath(); ctx.arc(px, py, 1.6, 0, Math.PI * 2);
               ctx.fillStyle = rgba(GREEN, a); ctx.fill();
             }
           });
         });
       }
 
-      /* ═══ Child edges — bezier ═══ */
+      /* ═══ Child edges ═══ */
       if (lP > 0) {
-        [[m1x, m1y, -12], [m2x, m2y, -18]].forEach(([nx, ny, bend]) => {
-          drawEdge(lx, ly, nx, ny, lP, 0.25 * lP, bend);
+        [[m1x, m1y, -14], [m2x, m2y, -20]].forEach(([nx, ny, bend]) => {
+          drawEdge(lx, ly, nx, ny, lP, 0.3 * lP, bend);
         });
       }
 
       /* ═══ NODE — center .ie ═══ */
       const cR = 28;
 
-      // very subtle halo
-      const hG = ctx.createRadialGradient(cnx, cny, cR, cnx, cny, cR * 3);
-      hG.addColorStop(0, rgba(GREEN, 0.04 * cP));
-      hG.addColorStop(1, rgba(BG, 0));
+      // soft emerald halo
+      const hG = ctx.createRadialGradient(cnx, cny, cR * 0.5, cnx, cny, cR * 3.5);
+      hG.addColorStop(0, rgba(GREEN_D, 0.08 * cP));
+      hG.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = hG;
-      ctx.beginPath(); ctx.arc(cnx, cny, cR * 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cnx, cny, cR * 3.5, 0, Math.PI * 2); ctx.fill();
 
-      // thin outer ring — gold accent
+      // gold outer ring
       ctx.beginPath(); ctx.arc(cnx, cny, cR + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = rgba(GOLD_M, 0.18 * cP); ctx.lineWidth = 0.5; ctx.stroke();
+      ctx.strokeStyle = rgba(GOLD, 0.16 * cP); ctx.lineWidth = 0.5; ctx.stroke();
 
-      // main circle — thin outlined
+      // main circle — filled dark, thin stroke
       ctx.beginPath(); ctx.arc(cnx, cny, cR, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(BG, cP); ctx.fill();
-      ctx.strokeStyle = rgba(INK, 0.55 * cP); ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = rgba([28, 34, 38], cP); ctx.fill();
+      ctx.strokeStyle = rgba(LINE_L, 0.5 * cP); ctx.lineWidth = 1; ctx.stroke();
 
       // label
       ctx.font = `500 16px ${SERIF}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = rgba(INK, 0.85 * cP);
+      ctx.fillStyle = rgba(WHITE, 0.9 * cP);
       ctx.fillText('.ie', cnx, cny + 1);
 
       /* ═══ NODE — helpers (active) ═══ */
       const nR = 22;
 
-      // active indicator — subtle green fill
-      ctx.beginPath(); ctx.arc(lx, ly, nR, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(GREEN, 0.06 * nP); ctx.fill();
-      ctx.strokeStyle = rgba(INK, 0.5 * nP); ctx.lineWidth = 0.8; ctx.stroke();
+      // emerald halo
+      const hG2 = ctx.createRadialGradient(lx, ly, nR * 0.4, lx, ly, nR * 3);
+      hG2.addColorStop(0, rgba(GREEN_D, 0.1 * nP));
+      hG2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = hG2;
+      ctx.beginPath(); ctx.arc(lx, ly, nR * 3, 0, Math.PI * 2); ctx.fill();
 
-      // thin gold ring — active marker
+      // gold breathing ring
+      const gP = 0.14 + 0.08 * Math.sin(t * 1.6);
       ctx.beginPath(); ctx.arc(lx, ly, nR + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = rgba(GOLD_M, 0.22 * nP); ctx.lineWidth = 0.5; ctx.stroke();
+      ctx.strokeStyle = rgba(GOLD, gP * nP); ctx.lineWidth = 0.5; ctx.stroke();
+
+      // disc
+      ctx.beginPath(); ctx.arc(lx, ly, nR, 0, Math.PI * 2);
+      ctx.fillStyle = rgba([28, 34, 38], nP); ctx.fill();
+      ctx.strokeStyle = rgba(GREEN, 0.4 * nP); ctx.lineWidth = 1; ctx.stroke();
 
       // label
       ctx.font = `500 14px ${SERIF}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = rgba(INK, 0.8 * nP);
+      ctx.fillStyle = rgba(WHITE, 0.85 * nP);
       ctx.fillText('helpers', lx, ly + 1);
 
       /* ═══ NODE — nodeadline (link) ═══ */
-      const hovFade = rHov ? 0.65 : 0.30;
+      if (rHov) {
+        const nG = ctx.createRadialGradient(rx, ry, nR * 0.3, rx, ry, nR * 2.5);
+        nG.addColorStop(0, rgba(GREEN_D, 0.08 * nP));
+        nG.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = nG;
+        ctx.beginPath(); ctx.arc(rx, ry, nR * 2.5, 0, Math.PI * 2); ctx.fill();
+      }
 
       ctx.beginPath(); ctx.arc(rx, ry, nR, 0, Math.PI * 2);
       ctx.fillStyle = rgba(BG, nP); ctx.fill();
-      ctx.strokeStyle = rgba(WARM, hovFade * nP);
+      ctx.strokeStyle = rgba(LINE_L, (rHov ? 0.6 : 0.3) * nP);
       ctx.lineWidth = rHov ? 1 : 0.7; ctx.stroke();
 
-      // label below
+      // label
       ctx.font = `400 14px ${SERIF}`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillStyle = rgba(INK, (rHov ? 0.7 : 0.4) * nP);
+      ctx.fillStyle = rgba(TEXT_D, (rHov ? 0.85 : 0.45) * nP);
       ctx.fillText('nodeadline', rx, ry + nR + 10);
       if (rHov) {
         const tw = ctx.measureText('nodeadline').width;
-        ctx.fillStyle = rgba(WARM, 0.45 * nP);
+        ctx.fillStyle = rgba(TEXT_D, 0.5 * nP);
         ctx.fillText('\u2197', rx + tw / 2 + 6, ry + nR + 10);
       }
 
@@ -289,10 +344,10 @@
         [[m1x, m1y, 'material'], [m2x, m2y, 'intangible']].forEach(([nx, ny, label]) => {
           const r = 12;
           ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2);
-          ctx.fillStyle = rgba(BG, lP); ctx.fill();
-          ctx.strokeStyle = rgba(WARM, 0.35 * lP); ctx.lineWidth = 0.6; ctx.stroke();
+          ctx.fillStyle = rgba(BG, 0.6 * lP); ctx.fill();
+          ctx.strokeStyle = rgba(LINE, 0.35 * lP); ctx.lineWidth = 0.6; ctx.stroke();
 
-          // tiny green center dot
+          // emerald center dot
           ctx.beginPath(); ctx.arc(nx, ny, 1.5, 0, Math.PI * 2);
           ctx.fillStyle = rgba(GREEN, 0.3 * lP); ctx.fill();
 
@@ -300,7 +355,7 @@
           ctx.font = `400 12px ${SERIF}`;
           ctx.textAlign = nx < lx ? 'right' : 'left';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = rgba(INK, 0.45 * lP);
+          ctx.fillStyle = rgba(TEXT_D, 0.5 * lP);
           ctx.fillText(label, nx < lx ? nx - 20 : nx + 20, ny);
         });
       }
