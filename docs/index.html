@@ -6,7 +6,7 @@
   <title>helpers.ie</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #070d07; }
     canvas { display: block; touch-action: none; }
   </style>
 </head>
@@ -85,6 +85,34 @@
       if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
     }
 
+    // triskelion: three slow Archimedean spirals, barely visible
+    function drawTriskelion(x, y, size, rotation, alpha) {
+      const arms = 3;
+      const turns = 2.2;
+      const steps = 120;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#3a7a3a';
+      ctx.lineWidth = 0.8;
+      for (let arm = 0; arm < arms; arm++) {
+        const armAngle = (arm / arms) * Math.PI * 2;
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+          const frac = i / steps;
+          const angle = armAngle + frac * turns * Math.PI * 2;
+          const r = frac * size;
+          const px = Math.cos(angle) * r;
+          const py = Math.sin(angle) * r;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
     function frame(now) {
       const t = (now - startTime) / 1000;
       ctx.clearRect(0, 0, W, H);
@@ -98,14 +126,29 @@
       const rHov   = hitNodeadline();
       canvas.style.cursor = rHov ? 'pointer' : 'default';
 
-      // Edges
+      // subtle dark green ambient glow behind center
+      if (cPhase > 0) {
+        const grd = ctx.createRadialGradient(cnx, cny, 0, cnx, cny, Math.min(W, H) * 0.55);
+        grd.addColorStop(0,   `rgba(20, 60, 20, ${0.18 * cPhase})`);
+        grd.addColorStop(0.5, `rgba(10, 30, 10, ${0.07 * cPhase})`);
+        grd.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // triskelion — slow rotation, appears after center fades in
+      const triAlpha = Math.min(cPhase * 0.55, 0.055);
+      const triSize = Math.min(W, H) * 0.22;
+      drawTriskelion(cnx, cny, triSize, t * 0.04, triAlpha);
+
+      // Edges — slightly green-tinted
       [[lx, ly], [rx, ry]].forEach(([nx, ny]) => {
         ctx.beginPath(); ctx.moveTo(cnx, cny);
         ctx.lineTo(cnx + (nx - cnx) * ePhase, cny + (ny - cny) * ePhase);
-        ctx.strokeStyle = `rgba(255,255,255,${0.13 * cPhase})`; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = `rgba(180,230,180,${0.16 * cPhase})`; ctx.lineWidth = 1; ctx.stroke();
       });
 
-      // Signal dots
+      // Signal dots — emerald
       if (t > 2.2) {
         [[lx, ly, 0], [rx, ry, 1.4]].forEach(([nx, ny, off]) => {
           const cycle = ((t - 2.2 + off) % 3.5) / 3.5;
@@ -113,13 +156,13 @@
             const p = easeOut(cycle / 0.55);
             ctx.beginPath();
             ctx.arc(cnx + (nx - cnx) * p, cny + (ny - cny) * p, 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,255,255,${0.55 * (1 - p)})`; ctx.fill();
+            ctx.fillStyle = `rgba(140,220,160,${0.6 * (1 - p)})`; ctx.fill();
           }
         });
       }
 
       // Center .ie
-      drawNode(cnx, cny, 32 * pulse, `rgba(255,255,255,${cPhase})`, null);
+      drawNode(cnx, cny, 32 * pulse, `rgba(245,252,245,${cPhase})`, null);
       ctx.font = '600 13px system-ui,-apple-system,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = `rgba(10,10,10,${cPhase})`; ctx.fillText('.ie', cnx, cny);
@@ -127,19 +170,19 @@
       const nr = 24 * pulse;
 
       // helpers — active
-      drawNode(lx, ly, nr, `rgba(255,255,255,${0.92 * nPhase})`, null);
+      drawNode(lx, ly, nr, `rgba(245,252,245,${0.92 * nPhase})`, null);
       ctx.font = '600 12px system-ui,-apple-system,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = `rgba(10,10,10,${nPhase})`; ctx.fillText('helpers', lx, ly);
 
       // nodeadline — link
       drawNode(rx, ry, nr,
-        `rgba(255,255,255,${(rHov ? 0.12 : 0.06) * nPhase})`,
-        `rgba(255,255,255,${(rHov ? 0.95 : 0.55) * nPhase})`
+        `rgba(245,252,245,${(rHov ? 0.12 : 0.06) * nPhase})`,
+        `rgba(220,245,220,${(rHov ? 0.95 : 0.50) * nPhase})`
       );
       ctx.font = '400 13px system-ui,-apple-system,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillStyle = `rgba(255,255,255,${(rHov ? 1 : 0.65) * nPhase})`;
+      ctx.fillStyle = `rgba(220,245,220,${(rHov ? 1 : 0.65) * nPhase})`;
       ctx.fillText(rHov ? 'nodeadline \u2197' : 'nodeadline', rx, ry + nr + 14);
 
       // helpers children
@@ -147,11 +190,11 @@
         [[m1x, m1y, 'material'], [m2x, m2y, 'intangible']].forEach(([nx, ny, label]) => {
           ctx.beginPath(); ctx.moveTo(lx, ly);
           ctx.lineTo(lx + (nx - lx) * lPhase, ly + (ny - ly) * lPhase);
-          ctx.strokeStyle = `rgba(255,255,255,${0.15 * lPhase})`; ctx.lineWidth = 1; ctx.stroke();
-          drawNode(nx, ny, 14, `rgba(255,255,255,${0.08 * lPhase})`, `rgba(255,255,255,${0.4 * lPhase})`);
+          ctx.strokeStyle = `rgba(160,220,160,${0.18 * lPhase})`; ctx.lineWidth = 1; ctx.stroke();
+          drawNode(nx, ny, 14, `rgba(245,252,245,${0.07 * lPhase})`, `rgba(200,235,200,${0.4 * lPhase})`);
           ctx.font = '400 11px system-ui,-apple-system,sans-serif';
           ctx.textAlign = nx < lx ? 'right' : 'left'; ctx.textBaseline = 'middle';
-          ctx.fillStyle = `rgba(255,255,255,${0.5 * lPhase})`;
+          ctx.fillStyle = `rgba(200,235,200,${0.55 * lPhase})`;
           ctx.fillText(label, nx < lx ? nx - 22 : nx + 22, ny);
         });
       }
