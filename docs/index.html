@@ -33,6 +33,14 @@
     window.addEventListener('resize', () => { ctx.resetTransform(); resize(); });
 
     const startTime = performance.now();
+    const mouse = { x: -999, y: -999 };
+
+    canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    canvas.addEventListener('click', () => {
+      const spread = Math.min(W, H) * 0.30;
+      if (Math.hypot(mouse.x - (cx + spread), mouse.y - (cy + spread * 0.55)) < 40)
+        window.open('https://nodeadline.ie', '_blank');
+    });
 
     function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
     function clamp(v) { return Math.max(0, Math.min(1, v)); }
@@ -42,77 +50,81 @@
       ctx.clearRect(0, 0, W, H);
 
       const spread = Math.min(W, H) * 0.30;
-      const center = { x: cx, y: cy - spread * 0.18 };
-      const left   = { x: cx - spread, y: cy + spread * 0.55, label: 'helpers' };
-      const right  = { x: cx + spread, y: cy + spread * 0.55, label: 'nodeadline' };
+      const cnx = cx,          cny = cy - spread * 0.18;
+      const lx  = cx - spread, ly  = cy + spread * 0.55;
+      const rx  = cx + spread, ry  = cy + spread * 0.55;
 
       const cPhase = easeOut(clamp(t / 0.7));
       const ePhase = easeOut(clamp((t - 0.7) / 0.9));
       const nPhase = easeOut(clamp((t - 1.5) / 0.6));
       const pulse  = 1 + Math.sin(t * 1.6) * 0.025;
+      const rHov   = Math.hypot(mouse.x - rx, mouse.y - ry) < 40;
+      canvas.style.cursor = rHov ? 'pointer' : 'default';
 
       // Edges
-      [left, right].forEach(node => {
-        const ex = center.x + (node.x - center.x) * ePhase;
-        const ey = center.y + (node.y - center.y) * ePhase;
+      [[lx, ly], [rx, ry]].forEach(([nx, ny]) => {
         ctx.beginPath();
-        ctx.moveTo(center.x, center.y);
-        ctx.lineTo(ex, ey);
+        ctx.moveTo(cnx, cny);
+        ctx.lineTo(cnx + (nx - cnx) * ePhase, cny + (ny - cny) * ePhase);
         ctx.strokeStyle = `rgba(255,255,255,${0.13 * cPhase})`;
         ctx.lineWidth = 1;
         ctx.stroke();
       });
 
-      // Traveling signal dots
+      // Signal dots
       if (t > 2.2) {
-        [left, right].forEach((node, i) => {
-          const cycle = ((t - 2.2 + i * 1.4) % 3.5) / 3.5;
+        [[lx, ly, 0], [rx, ry, 1.4]].forEach(([nx, ny, offset]) => {
+          const cycle = ((t - 2.2 + offset) % 3.5) / 3.5;
           if (cycle < 0.55) {
             const p = easeOut(cycle / 0.55);
-            const sx = center.x + (node.x - center.x) * p;
-            const sy = center.y + (node.y - center.y) * p;
             ctx.beginPath();
-            ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+            ctx.arc(cnx + (nx - cnx) * p, cny + (ny - cny) * p, 2.5, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255,255,255,${0.55 * (1 - p)})`;
             ctx.fill();
           }
         });
       }
 
-      // Center node — filled white
+      // Center node
       const cr = 32 * pulse;
       ctx.beginPath();
-      ctx.arc(center.x, center.y, cr, 0, Math.PI * 2);
+      ctx.arc(cnx, cny, cr, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,255,255,${cPhase})`;
       ctx.fill();
-
-      ctx.font = `600 13px system-ui,-apple-system,sans-serif`;
+      ctx.font = '600 13px system-ui,-apple-system,sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = `rgba(10,10,10,${cPhase})`;
-      ctx.fillText('.ie', center.x, center.y);
+      ctx.fillText('.ie', cnx, cny);
 
-      // Peripheral nodes — outlined
-      [left, right].forEach(node => {
-        const nr = 24 * pulse;
+      const nr = 24 * pulse;
 
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, nr, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${0.06 * nPhase})`;
-        ctx.fill();
+      // helpers — active (filled white, label inside)
+      ctx.beginPath();
+      ctx.arc(lx, ly, nr, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${0.92 * nPhase})`;
+      ctx.fill();
+      ctx.font = '600 12px system-ui,-apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(10,10,10,${nPhase})`;
+      ctx.fillText('helpers', lx, ly);
 
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, nr, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,255,255,${0.55 * nPhase})`;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        ctx.font = `400 13px system-ui,-apple-system,sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = `rgba(255,255,255,${0.65 * nPhase})`;
-        ctx.fillText(node.label, node.x, node.y + nr + 14);
-      });
+      // nodeadline — link node (outlined, hover effect, clickable)
+      ctx.beginPath();
+      ctx.arc(rx, ry, nr, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${(rHov ? 0.12 : 0.06) * nPhase})`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(rx, ry, nr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,255,255,${(rHov ? 0.95 : 0.55) * nPhase})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.font = '400 13px system-ui,-apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = `rgba(255,255,255,${(rHov ? 1 : 0.65) * nPhase})`;
+      ctx.fillText(rHov ? 'nodeadline ↗' : 'nodeadline', rx, ry + nr + 14);
 
       requestAnimationFrame(frame);
     }
