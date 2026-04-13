@@ -3,155 +3,349 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>helpers.ie</title>
+  <title>helpers.ie — Handyman you can trust</title>
+  <meta name="description" content="We don't guess who's good. We know. Verified handymen, guaranteed results.">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #f0ebe2; }
-    canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+
+    :root {
+      --bg: #fafaf8;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --accent: #1a6b3c;
+      --accent-light: #e8f5ee;
+      --card-bg: #ffffff;
+      --border: #e5e5e5;
+      --guarantee: #14532d;
+      --guarantee-bg: #dcfce7;
+    }
+
+    html { font-size: 18px; scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 32px 0 0;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero .subtitle {
+      font-size: 1.25rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* ── Problem ── */
+    .problem {
+      padding: 40px 0 60px;
+      text-align: center;
+    }
+
+    .problem-box {
+      background: #fff8f0;
+      border: 2px solid #f0d8b8;
+      border-radius: 12px;
+      padding: 32px;
+      font-size: 1.1rem;
+      line-height: 1.7;
+      color: #5a3e1b;
+    }
+
+    .problem-box strong {
+      color: #8b4513;
+    }
+
+    /* ── Steps ── */
+    .steps {
+      padding: 40px 0 60px;
+    }
+
+    .steps h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 40px;
+      align-items: flex-start;
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-content h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .step-content p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ── Guarantee ── */
+    .guarantee {
+      padding: 40px 0 60px;
+    }
+
+    .guarantee-box {
+      background: var(--guarantee-bg);
+      border: 2px solid #86efac;
+      border-radius: 16px;
+      padding: 40px 36px;
+      text-align: center;
+    }
+
+    .guarantee-box .shield {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .guarantee-box h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--guarantee);
+      margin-bottom: 12px;
+    }
+
+    .guarantee-box p {
+      font-size: 1.05rem;
+      color: #15803d;
+      line-height: 1.6;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ── How money works ── */
+    .money {
+      padding: 40px 0 60px;
+    }
+
+    .money h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .money-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .money-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .money-card .icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .money-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .money-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 48px 0;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+
+    footer .brand {
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    footer p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 8px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      html { font-size: 16px; }
+      .hero { padding: 60px 0 40px; }
+      .hero h1 { font-size: 2rem; }
+      .hero .subtitle { font-size: 1.1rem; }
+      .money-grid { grid-template-columns: 1fr; }
+      .step { gap: 16px; }
+      .guarantee-box { padding: 28px 20px; }
+    }
   </style>
 </head>
 <body>
-  <canvas id="c"></canvas>
-  <script>
-    const C = document.getElementById('c');
-    const X = C.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    let W, H;
+  <header>
+    <div class="container">
+      <div class="logo">helpers.ie</div>
+    </div>
+  </header>
 
-    function resize() {
-      W = innerWidth; H = innerHeight;
-      C.width = W * dpr; C.height = H * dpr;
-      C.style.width = W + 'px'; C.style.height = H + 'px';
-      X.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    resize();
-    addEventListener('resize', () => { X.resetTransform(); resize(); });
+  <section class="hero">
+    <div class="container">
+      <h1>We don't guess<br>who's good.<br><span>We know.</span></h1>
+      <p class="subtitle">A handyman platform where every worker is digitally verified, monitored, and guaranteed — before they touch your job.</p>
+    </div>
+  </section>
 
-    const T0 = performance.now();
+  <section class="problem">
+    <div class="container">
+      <div class="problem-box">
+        Other platforms show you <strong>whoever pays the most for ads</strong>. You pick a stranger, hope for the best, and have zero recourse when things go wrong. <strong>That's not matching. That's gambling.</strong>
+      </div>
+    </div>
+  </section>
 
-    /* ── Gradient Blobs ── */
-    const blobs = [
-      { // emerald green — Irish green
-        x: 0.2, y: 0.3, r: 0.38,
-        vx: 0.012, vy: 0.008,
-        color: [30, 120, 60],
-        phase: 0
-      },
-      { // gold — Celtic gold
-        x: 0.75, y: 0.25, r: 0.32,
-        vx: -0.009, vy: 0.011,
-        color: [195, 165, 55],
-        phase: 1.2
-      },
-      { // deep purple — Book of Kells
-        x: 0.15, y: 0.15, r: 0.35,
-        vx: 0.007, vy: -0.006,
-        color: [110, 60, 170],
-        phase: 2.4
-      },
-      { // warm coral/rose
-        x: 0.55, y: 0.45, r: 0.4,
-        vx: -0.008, vy: 0.007,
-        color: [210, 90, 100],
-        phase: 3.6
-      },
-      { // dark olive — earth
-        x: 0.8, y: 0.75, r: 0.34,
-        vx: 0.006, vy: -0.01,
-        color: [130, 120, 55],
-        phase: 4.8
-      },
-      { // mauve/plum
-        x: 0.35, y: 0.8, r: 0.3,
-        vx: -0.011, vy: -0.005,
-        color: [160, 80, 140],
-        phase: 5.5
-      }
-    ];
+  <section class="steps">
+    <div class="container">
+      <h2>How we actually work</h2>
 
-    /* ── Noise grain texture ── */
-    let grainCanvas, grainCtx;
-    function makeGrain() {
-      grainCanvas = document.createElement('canvas');
-      grainCanvas.width = 256; grainCanvas.height = 256;
-      grainCtx = grainCanvas.getContext('2d');
-      const img = grainCtx.createImageData(256, 256);
-      const d = img.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const v = Math.random() * 255;
-        d[i] = d[i+1] = d[i+2] = v;
-        d[i+3] = 18;
-      }
-      grainCtx.putImageData(img, 0, 0);
-    }
-    makeGrain();
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>We enter their world</h3>
+          <p>We digitize the handyman's workshop — inventory, tools, supplies. We know exactly what they have and what they can do right now.</p>
+        </div>
+      </div>
 
-    function frame(now) {
-      const t = (now - T0) / 1000;
-      const s = Math.min(W, H);
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>We automate their books</h3>
+          <p>Their accounting runs through our system. No shady side-jobs, no overcharging. Full transparency.</p>
+        </div>
+      </div>
 
-      /* ── Background ── */
-      X.fillStyle = '#f0ebe2';
-      X.fillRect(0, 0, W, H);
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>We watch the work</h3>
+          <p>Our system monitors active jobs for critical errors. If something's going wrong, we catch it — not you.</p>
+        </div>
+      </div>
 
-      /* ── Draw blobs ── */
-      for (const b of blobs) {
-        // Organic drifting motion
-        const bx = (b.x + Math.sin(t * b.vx * 2 + b.phase) * 0.15 +
-                    Math.sin(t * b.vy * 1.3 + b.phase * 0.7) * 0.08) * W;
-        const by = (b.y + Math.cos(t * b.vy * 2 + b.phase + 1) * 0.12 +
-                    Math.cos(t * b.vx * 1.7 + b.phase * 1.3) * 0.06) * H;
-        const br = b.r * s * (0.9 + Math.sin(t * 0.3 + b.phase) * 0.1);
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h3>We check the schedule</h3>
+          <p>We don't just confirm "available". We verify they have the right free window AND aren't making mistakes on their current jobs. Only then your order goes in.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        const g = X.createRadialGradient(bx, by, 0, bx, by, br);
-        const [r, gn, bl] = b.color;
-        g.addColorStop(0, `rgba(${r},${gn},${bl},0.65)`);
-        g.addColorStop(0.4, `rgba(${r},${gn},${bl},0.35)`);
-        g.addColorStop(0.7, `rgba(${r},${gn},${bl},0.1)`);
-        g.addColorStop(1, `rgba(${r},${gn},${bl},0)`);
+  <section class="money">
+    <div class="container">
+      <h2>How payment works</h2>
+      <div class="money-grid">
+        <div class="money-card">
+          <span class="icon">💶</span>
+          <h3>You pay us</h3>
+          <p>Not the handyman. Your money is held securely until the job is done right.</p>
+        </div>
+        <div class="money-card">
+          <span class="icon">🔒</span>
+          <h3>Funds are reserved</h3>
+          <p>If the handyman fails, we use the reserved funds to send another verified worker — or refund you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        X.fillStyle = g;
-        X.fillRect(0, 0, W, H);
-      }
+  <section class="guarantee">
+    <div class="container">
+      <div class="guarantee-box">
+        <span class="shield">🛡️</span>
+        <h2>The job gets done. Period.</h2>
+        <p>If your handyman can't finish — we don't leave you hanging. Another verified professional steps in automatically, or you get your money back. No calls. No arguing. No stress.</p>
+      </div>
+    </div>
+  </section>
 
-      /* ── Grain overlay ── */
-      X.globalAlpha = 1;
-      const pat = X.createPattern(grainCanvas, 'repeat');
-      X.fillStyle = pat;
-      X.fillRect(0, 0, W, H);
-
-      /* ── Text ── */
-      const fontSize = Math.round(s * 0.13);
-      X.save();
-      X.globalCompositeOperation = 'color-burn';
-      X.font = `700 ${fontSize}px 'Georgia', 'Times New Roman', serif`;
-      X.textAlign = 'center';
-      X.textBaseline = 'middle';
-
-      // measure for two-line layout
-      const line1 = 'help is';
-      const line2 = 'on the way';
-      const leading = fontSize * 1.05;
-      const cy = H / 2;
-
-      X.fillStyle = '#1a1a2e';
-      X.fillText(line1, W / 2, cy - leading * 0.45);
-      X.fillText(line2, W / 2, cy + leading * 0.55);
-      X.restore();
-
-      /* ── Subtle subtext ── */
-      X.globalAlpha = 0.4;
-      X.font = `400 ${Math.round(s * 0.015)}px system-ui, -apple-system, sans-serif`;
-      X.textAlign = 'center';
-      X.textBaseline = 'middle';
-      X.fillStyle = '#5a5a5a';
-      X.letterSpacing = '0.2em';
-      X.fillText('HELPERS.IE', W / 2, H * 0.92);
-      X.globalAlpha = 1;
-
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  </script>
+  <footer>
+    <div class="container">
+      <div class="brand">helpers.ie</div>
+      <p>Ireland's verified handyman platform</p>
+    </div>
+  </footer>
 </body>
 </html>
