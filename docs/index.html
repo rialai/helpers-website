@@ -4,10 +4,99 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>helpers.ie</title>
+  <style>
+    .entrance-wrap {
+      margin-top: 48px;
+      text-align: center;
+    }
+
+    .entrance-btn {
+      font-size: clamp(2rem, 9vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #000;
+      text-decoration: none;
+      position: relative;
+      display: inline-block;
+      line-height: 1;
+      animation: flicker 0.15s infinite;
+    }
+
+    .entrance-btn::before,
+    .entrance-btn::after {
+      content: "Entrance";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .entrance-btn::before {
+      color: rgba(0, 0, 0, 0.7);
+      text-shadow: 3px 0 #fff, -1px 0 #ccc;
+      animation: noise-1 0.3s infinite steps(2);
+    }
+
+    .entrance-btn::after {
+      color: rgba(0, 0, 0, 0.7);
+      text-shadow: -3px 0 #fff, 1px 0 #ccc;
+      animation: noise-2 0.25s infinite steps(3);
+    }
+
+    @keyframes flicker {
+      0% { opacity: 1; }
+      10% { opacity: 0.85; }
+      20% { opacity: 1; }
+      30% { opacity: 0.9; }
+      40% { opacity: 1; }
+      50% { opacity: 0.6; }
+      55% { opacity: 1; }
+      70% { opacity: 0.95; }
+      80% { opacity: 0.4; }
+      85% { opacity: 1; }
+      90% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes noise-1 {
+      0% { clip-path: inset(40% 0 20% 0); transform: translate(-3px, 0); }
+      10% { clip-path: inset(10% 0 75% 0); transform: translate(4px, 1px); }
+      20% { clip-path: inset(70% 0 5% 0); transform: translate(-5px, -1px); }
+      30% { clip-path: inset(25% 0 50% 0); transform: translate(2px, 0); }
+      40% { clip-path: inset(80% 0 0% 0); transform: translate(-4px, 2px); }
+      50% { clip-path: inset(5% 0 85% 0); transform: translate(6px, -1px); }
+      60% { clip-path: inset(55% 0 15% 0); transform: translate(-2px, 1px); }
+      70% { clip-path: inset(15% 0 60% 0); transform: translate(5px, 0); }
+      80% { clip-path: inset(65% 0 10% 0); transform: translate(-6px, -2px); }
+      90% { clip-path: inset(35% 0 40% 0); transform: translate(3px, 1px); }
+      100% { clip-path: inset(50% 0 30% 0); transform: translate(-3px, 0); }
+    }
+
+    @keyframes noise-2 {
+      0% { clip-path: inset(60% 0 10% 0); transform: translate(4px, 1px); }
+      10% { clip-path: inset(5% 0 70% 0); transform: translate(-6px, 0); }
+      20% { clip-path: inset(45% 0 25% 0); transform: translate(3px, -2px); }
+      30% { clip-path: inset(85% 0 0% 0); transform: translate(-4px, 1px); }
+      40% { clip-path: inset(20% 0 55% 0); transform: translate(5px, 0); }
+      50% { clip-path: inset(75% 0 5% 0); transform: translate(-2px, -1px); }
+      60% { clip-path: inset(30% 0 45% 0); transform: translate(6px, 2px); }
+      70% { clip-path: inset(90% 0 0% 0); transform: translate(-5px, 0); }
+      80% { clip-path: inset(10% 0 65% 0); transform: translate(4px, -1px); }
+      90% { clip-path: inset(50% 0 20% 0); transform: translate(-3px, 2px); }
+      100% { clip-path: inset(70% 0 10% 0); transform: translate(2px, 0); }
+    }
+  </style>
 </head>
 <body>
   <p>Разговариваем с вами лично, неограниченное время.</p>
   <p>Добавляем в чат с предпринимателями и изобретателями.</p>
+
+  <div class="entrance-wrap">
+    <a class="entrance-btn" href="#">Entrance</a>
+  </div>
 
   <script>
     function hitCounter(url) {
