@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>helpers.ie stats</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #111111;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+    }
+
+    .row {
+      margin: 12px 0;
+      font-size: 18px;
+    }
+
+    .label {
+      display: inline-block;
+      min-width: 220px;
+      font-weight: 700;
+    }
+
+    .muted {
+      margin-top: 18px;
+      color: #666666;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>helpers.ie visitor stats</h1>
+
+  <div class="row"><span class="label">Total visits:</span> <img class="counter" src="https://hits.sh/helpers.ie-total.svg?label=total%20visits&color=007ec6" alt="Total visits counter"></div>
+  <div class="row"><span class="label">Today visits:</span> <img id="todayCounter" class="counter" alt="Today visits counter"></div>
+
+  <p class="muted">Data source: hits.sh</p>
+
+  <script>
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById("todayCounter").src = "https://hits.sh/helpers.ie-" + today + ".svg?label=today%20visits&color=8c7ae6";
+  </script>
+</body>
+</html>

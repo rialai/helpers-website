@@ -8,5 +8,21 @@
 <body>
   <p>Разговариваем с вами лично, неограниченное время.</p>
   <p>Добавляем в чат с предпринимателями и изобретателями.</p>
+
+  <script>
+    function hitCounter(url) {
+      const beacon = new Image();
+      beacon.referrerPolicy = "no-referrer";
+      beacon.src = url;
+    }
+
+    function trackVisit() {
+      hitCounter("https://hits.sh/helpers.ie-total.svg?label=total%20visits&color=007ec6");
+      const today = new Date().toISOString().slice(0, 10);
+      hitCounter("https://hits.sh/helpers.ie-" + today + ".svg?label=today%20visits&color=8c7ae6");
+    }
+
+    trackVisit();
+  </script>
 </body>
 </html>
