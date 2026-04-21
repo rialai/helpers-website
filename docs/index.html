@@ -1,47 +1,138 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>helpers.ie</title>
+  <style>
+    html,
+    body,
+    canvas {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
-  <h1>helpers.ie — публичная информация о домене</h1>
+  <canvas id="fractal"></canvas>
+  <script>
+    const canvas = document.getElementById("fractal");
+    const ctx = canvas.getContext("2d", { alpha: false });
 
-  <p>Источник: WHOIS и DNS (публичные данные).</p>
+    const state = {
+      cx: -0.743643887037151,
+      cy: 0.13182590420533,
+      scale: 3.2,
+      maxIterations: 150,
+      time: 0
+    };
 
-  <h2>Регистрация</h2>
-  <p>Домен: helpers.ie</p>
-  <p>Регистратор: 101 Domain</p>
-  <p>Сайт регистратора: 101domain.com/ie</p>
-  <p>Creation Date: 2025-02-17T14:40:16Z</p>
-  <p>Updated Date: 2026-02-07T02:02:23Z</p>
-  <p>Expiry Date: 2027-02-17T14:40:16Z</p>
-  <p>Статус: clientTransferProhibited</p>
-  <p>DNSSEC: unsigned</p>
+    const renderSize = {
+      w: 0,
+      h: 0
+    };
 
-  <h2>Владелец</h2>
-  <p>Registrant Name: REDACTED FOR PRIVACY</p>
-  <p>Admin/Tech/Billing: скрыто (privacy protection)</p>
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const targetW = Math.max(320, Math.floor(window.innerWidth * dpr * 0.55));
+      const targetH = Math.max(200, Math.floor(window.innerHeight * dpr * 0.55));
 
-  <h2>Контакты abuse регистратора</h2>
-  <p>Email: abuse@101domain.com</p>
-  <p>Phone: +1.7604448674</p>
+      renderSize.w = targetW;
+      renderSize.h = targetH;
 
-  <h2>DNS</h2>
-  <p>NS: ns1.101domain.com</p>
-  <p>NS: ns2.101domain.com</p>
-  <p>NS: ns5.101domain.com</p>
+      canvas.width = targetW;
+      canvas.height = targetH;
+      canvas.style.width = "100vw";
+      canvas.style.height = "100vh";
 
-  <p>A: 185.199.108.153</p>
-  <p>A: 185.199.109.153</p>
-  <p>A: 185.199.110.153</p>
-  <p>A: 185.199.111.153</p>
+      ctx.imageSmoothingEnabled = false;
+    }
 
-  <p>MX: 1 smtp.google.com</p>
-  <p>TXT: google-site-verification=jvMt7DlWJs4TpqVEU7eDWf0v6zjL42U-UiAi1pl1UGU</p>
+    function palette(t) {
+      const r = Math.floor(127 + 127 * Math.cos(6.2831 * (t + 0.0)));
+      const g = Math.floor(127 + 127 * Math.cos(6.2831 * (t + 0.33)));
+      const b = Math.floor(127 + 127 * Math.cos(6.2831 * (t + 0.67)));
+      return [r, g, b];
+    }
 
-  <h2>Примечание</h2>
-  <p>Более персональные данные владельца не публикуются в WHOIS из-за privacy защиты.</p>
+    function drawMandelbrot() {
+      const w = renderSize.w;
+      const h = renderSize.h;
+      const image = ctx.createImageData(w, h);
+      const data = image.data;
+      const aspect = w / h;
+
+      const halfX = state.scale * 0.5;
+      const halfY = halfX / aspect;
+      const minX = state.cx - halfX;
+      const minY = state.cy - halfY;
+
+      let ptr = 0;
+      for (let py = 0; py < h; py++) {
+        const y0 = minY + (py / h) * (halfY * 2);
+        for (let px = 0; px < w; px++) {
+          const x0 = minX + (px / w) * (halfX * 2);
+
+          let x = 0;
+          let y = 0;
+          let iter = 0;
+
+          while (x * x + y * y <= 4 && iter < state.maxIterations) {
+            const xt = x * x - y * y + x0;
+            y = 2 * x * y + y0;
+            x = xt;
+            iter++;
+          }
+
+          if (iter === state.maxIterations) {
+            data[ptr++] = 0;
+            data[ptr++] = 0;
+            data[ptr++] = 0;
+            data[ptr++] = 255;
+            continue;
+          }
+
+          const smooth = iter - Math.log2(Math.log2(x * x + y * y));
+          const t = (smooth * 0.018 + state.time * 0.04) % 1;
+          const [r, g, b] = palette(t);
+
+          data[ptr++] = r;
+          data[ptr++] = g;
+          data[ptr++] = b;
+          data[ptr++] = 255;
+        }
+      }
+
+      ctx.putImageData(image, 0, 0);
+    }
+
+    function animate() {
+      state.time += 0.012;
+      state.scale *= 0.987;
+
+      if (state.scale < 0.000006) {
+        state.scale = 3.2;
+        state.time = 0;
+      }
+
+      const zoomLevel = Math.max(0, Math.log10(3.2 / state.scale));
+      state.maxIterations = Math.min(420, 150 + Math.floor(zoomLevel * 32));
+
+      drawMandelbrot();
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", () => {
+      resize();
+      drawMandelbrot();
+    });
+
+    resize();
+    animate();
+  </script>
 </body>
 </html>
