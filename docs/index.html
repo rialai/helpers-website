@@ -27,7 +27,7 @@
       cx: -0.743643887037151,
       cy: 0.13182590420533,
       scale: 3.2,
-      maxIterations: 150,
+      maxIterations: 90,
       time: 0
     };
 
@@ -36,10 +36,15 @@
       h: 0
     };
 
+    let image = null;
+    const targetFrameMs = 100;
+    let lastFrameTime = 0;
+
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      const targetW = Math.max(320, Math.floor(window.innerWidth * dpr * 0.55));
-      const targetH = Math.max(200, Math.floor(window.innerHeight * dpr * 0.55));
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      const scaleFactor = window.innerWidth < 900 ? 0.2 : 0.28;
+      const targetW = Math.max(220, Math.floor(window.innerWidth * dpr * scaleFactor));
+      const targetH = Math.max(140, Math.floor(window.innerHeight * dpr * scaleFactor));
 
       renderSize.w = targetW;
       renderSize.h = targetH;
@@ -50,6 +55,7 @@
       canvas.style.height = "100vh";
 
       ctx.imageSmoothingEnabled = false;
+      image = ctx.createImageData(targetW, targetH);
     }
 
     function palette(t) {
@@ -62,7 +68,9 @@
     function drawMandelbrot() {
       const w = renderSize.w;
       const h = renderSize.h;
-      const image = ctx.createImageData(w, h);
+      if (!image || image.width !== w || image.height !== h) {
+        image = ctx.createImageData(w, h);
+      }
       const data = image.data;
       const aspect = w / h;
 
@@ -111,8 +119,15 @@
     }
 
     function animate() {
+      const now = performance.now();
+      if (now - lastFrameTime < targetFrameMs) {
+        requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTime = now;
+
       state.time += 0.012;
-      state.scale *= 0.987;
+      state.scale *= 0.992;
 
       if (state.scale < 0.000006) {
         state.scale = 3.2;
@@ -120,7 +135,7 @@
       }
 
       const zoomLevel = Math.max(0, Math.log10(3.2 / state.scale));
-      state.maxIterations = Math.min(420, 150 + Math.floor(zoomLevel * 32));
+      state.maxIterations = Math.min(190, 90 + Math.floor(zoomLevel * 16));
 
       drawMandelbrot();
       requestAnimationFrame(animate);
