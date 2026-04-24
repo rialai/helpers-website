@@ -1,153 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>helpers.ie</title>
-  <style>
-    html,
-    body,
-    canvas {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: #000;
-      overflow: hidden;
-    }
-  </style>
 </head>
 <body>
-  <canvas id="fractal"></canvas>
-  <script>
-    const canvas = document.getElementById("fractal");
-    const ctx = canvas.getContext("2d", { alpha: false });
+  <h1>helpers.ie</h1>
 
-    const state = {
-      cx: -0.743643887037151,
-      cy: 0.13182590420533,
-      scale: 3.2,
-      maxIterations: 90,
-      time: 0
-    };
+  <p>Helpers.ie — стартап, который помогает микробизнесам и небольшим командам наводить порядок в операционке, данных и цифровой инфраструктуре.</p>
 
-    const renderSize = {
-      w: 0,
-      h: 0
-    };
+  <h2>Чем мы занимаемся</h2>
+  <p>Настраиваем базовые процессы, которые обычно годами держатся на хаосе, ручной работе и догадках.</p>
+  <p>Собираем в рабочую систему сайт, домен, почту, аналитику, формы, CRM, автоматизации, внутренние чаты, отчеты и технические интеграции.</p>
+  <p>Показываем, какие инструменты уже нужны бизнесу сейчас, а какие можно подключать следующим этапом.</p>
 
-    let image = null;
-    const targetFrameMs = 100;
-    let lastFrameTime = 0;
+  <h2>С кем мы работаем</h2>
+  <p>С основателями, микробизнесами, самостоятельными специалистами, небольшими сервисными компаниями, предпринимателями и изобретателями.</p>
 
-    function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
-      const scaleFactor = window.innerWidth < 900 ? 0.2 : 0.28;
-      const targetW = Math.max(220, Math.floor(window.innerWidth * dpr * scaleFactor));
-      const targetH = Math.max(140, Math.floor(window.innerHeight * dpr * scaleFactor));
+  <h2>Что именно делаем на практике</h2>
+  <p>Аудит текущего цифрового бардака.</p>
+  <p>Настройка доменов, почты и веб-инфраструктуры.</p>
+  <p>Подключение аналитики и отслеживания событий.</p>
+  <p>Внедрение CRM, форм, воронок и автоматизаций.</p>
+  <p>Интеграция Google, Meta, ERPNext и других инструментов под конкретную задачу.</p>
+  <p>Сборка понятной технической карты роста, а не набора случайных сервисов.</p>
 
-      renderSize.w = targetW;
-      renderSize.h = targetH;
-
-      canvas.width = targetW;
-      canvas.height = targetH;
-      canvas.style.width = "100vw";
-      canvas.style.height = "100vh";
-
-      ctx.imageSmoothingEnabled = false;
-      image = ctx.createImageData(targetW, targetH);
-    }
-
-    function palette(t) {
-      const r = Math.floor(127 + 127 * Math.cos(6.2831 * (t + 0.0)));
-      const g = Math.floor(127 + 127 * Math.cos(6.2831 * (t + 0.33)));
-      const b = Math.floor(127 + 127 * Math.cos(6.2831 * (t + 0.67)));
-      return [r, g, b];
-    }
-
-    function drawMandelbrot() {
-      const w = renderSize.w;
-      const h = renderSize.h;
-      if (!image || image.width !== w || image.height !== h) {
-        image = ctx.createImageData(w, h);
-      }
-      const data = image.data;
-      const aspect = w / h;
-
-      const halfX = state.scale * 0.5;
-      const halfY = halfX / aspect;
-      const minX = state.cx - halfX;
-      const minY = state.cy - halfY;
-
-      let ptr = 0;
-      for (let py = 0; py < h; py++) {
-        const y0 = minY + (py / h) * (halfY * 2);
-        for (let px = 0; px < w; px++) {
-          const x0 = minX + (px / w) * (halfX * 2);
-
-          let x = 0;
-          let y = 0;
-          let iter = 0;
-
-          while (x * x + y * y <= 4 && iter < state.maxIterations) {
-            const xt = x * x - y * y + x0;
-            y = 2 * x * y + y0;
-            x = xt;
-            iter++;
-          }
-
-          if (iter === state.maxIterations) {
-            data[ptr++] = 0;
-            data[ptr++] = 0;
-            data[ptr++] = 0;
-            data[ptr++] = 255;
-            continue;
-          }
-
-          const smooth = iter - Math.log2(Math.log2(x * x + y * y));
-          const t = (smooth * 0.018 + state.time * 0.04) % 1;
-          const [r, g, b] = palette(t);
-
-          data[ptr++] = r;
-          data[ptr++] = g;
-          data[ptr++] = b;
-          data[ptr++] = 255;
-        }
-      }
-
-      ctx.putImageData(image, 0, 0);
-    }
-
-    function animate() {
-      const now = performance.now();
-      if (now - lastFrameTime < targetFrameMs) {
-        requestAnimationFrame(animate);
-        return;
-      }
-      lastFrameTime = now;
-
-      state.time += 0.012;
-      state.scale *= 0.992;
-
-      if (state.scale < 0.000006) {
-        state.scale = 3.2;
-        state.time = 0;
-      }
-
-      const zoomLevel = Math.max(0, Math.log10(3.2 / state.scale));
-      state.maxIterations = Math.min(190, 90 + Math.floor(zoomLevel * 16));
-
-      drawMandelbrot();
-      requestAnimationFrame(animate);
-    }
-
-    window.addEventListener("resize", () => {
-      resize();
-      drawMandelbrot();
-    });
-
-    resize();
-    animate();
-  </script>
+  <h2>Подход</h2>
+  <p>Сначала убираем хаос и ставим фундамент. Потом подключаем инструменты, которые реально дают контроль, скорость и рост.</p>
 </body>
 </html>
