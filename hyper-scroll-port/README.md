@@ -18,9 +18,9 @@ npm run preview
 
 ## GitHub Pages deployment
 
-The Vite base path defaults to `/helpers.ie/` for project-page deployment.
+The Vite base path defaults to `/` for custom-domain deployment (helpers.ie).
 
-- Default build (project page): `npm run build`
-- Override base path when needed: `VITE_BASE_PATH=/ npm run build`
+- Default build (custom domain): `npm run build`
+- Override base path for project-page deployment when needed: `VITE_BASE_PATH=/helpers.ie/ npm run build`
 
 Deployment is automated via GitHub Actions in `.github/workflows/deploy.yml`.
