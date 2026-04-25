@@ -19,6 +19,7 @@ body,
   margin: 0;
   padding: 0;
   width: 100%;
+  min-height: 100%;
   height: 100%;
 }
 
@@ -28,6 +29,25 @@ body {
   font-family: var(--font-display);
   overflow: hidden;
   cursor: crosshair;
+}
+
+html.touch-mode,
+html.touch-mode body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+html.touch-mode body {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  min-height: var(--app-height, 100vh);
+}
+
+@supports (height: 100dvh) {
+  html.touch-mode body {
+    min-height: 100dvh;
+  }
 }
 
 .scanlines {
@@ -116,9 +136,17 @@ body {
 .viewport {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: var(--app-height, 100vh);
   perspective: 1000px;
   overflow: hidden;
   z-index: 1;
+}
+
+@supports (height: 100dvh) {
+  .viewport {
+    height: 100dvh;
+  }
 }
 
 .world {
@@ -266,4 +294,10 @@ body {
   position: absolute;
   width: 100%;
   z-index: -1;
+}
+
+html.touch-mode .scroll-proxy {
+  position: relative;
+  pointer-events: none;
+  min-height: 10000vh;
 }

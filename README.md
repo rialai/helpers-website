@@ -1,33 +1,50 @@
-### Helpers Website
+# helpers.ie homepage
 
-Website customizations
+This repository is intentionally reduced to a single source of truth for the live homepage at https://helpers.ie/.
 
-### Installation
+## Source of truth
 
-You can install this app using the [bench](https://github.com/frappe/bench) CLI:
+- Homepage app: `hyper-scroll-port/` (Vite + React + TypeScript)
+- Deployment workflow: `.github/workflows/deploy.yml`
 
-```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app $URL_OF_THIS_REPO --branch main
-bench install-app helpers_website
-```
+There are no alternative homepage implementations in this repository.
 
-### Contributing
-
-This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
+## Local development
 
 ```bash
-cd apps/helpers_website
-pre-commit install
+cd hyper-scroll-port
+npm ci
+npm run dev
 ```
 
-Pre-commit is configured to use the following tools for checking and formatting your code:
+## Production build
 
-- ruff
-- eslint
-- prettier
-- pyupgrade
+```bash
+cd hyper-scroll-port
+npm run build
+npm run preview
+```
 
-### License
+## Deployment
 
-mit
+Deployment runs through GitHub Actions workflow `.github/workflows/deploy.yml`:
+
+1. Installs dependencies in `hyper-scroll-port/`
+2. Builds with `VITE_BASE_PATH=/`
+3. Uploads `hyper-scroll-port/dist` as the Pages artifact
+4. Deploys to GitHub Pages
+
+This is the only deployment path kept in the repository.
+
+## Safe editing rules
+
+- Homepage source is only in `hyper-scroll-port/src/`.
+- Keep layout/content/behavior unchanged unless intentionally updating the live homepage.
+- Do not add parallel homepage stacks or alternative deploy workflows.
+- Validate changes with:
+
+```bash
+cd hyper-scroll-port
+npm ci
+npm run build
+```

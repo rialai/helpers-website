@@ -2,16 +2,32 @@ import { useEffect, useRef } from "react";
 import Lenis from "@studio-freight/lenis";
 import { SCENE_ITEMS, type SceneWorldItem } from "./content/scenes";
 
+type InteractionMode = "desktop" | "touch";
+
 type ItemType = "text" | "card" | "star";
 
 type WorldItem = {
   el: HTMLDivElement;
   type: ItemType;
+  baseX: number;
+  baseY: number;
   x: number;
   y: number;
   rot: number;
   baseZ: number;
   emphasis?: "accent" | "accent2" | "neutral";
+};
+
+type ScrollRead = {
+  scroll: number;
+  velocity: number;
+};
+
+type ScrollSource = {
+  update: (time: number) => void;
+  read: () => ScrollRead;
+  syncAfterResize: () => void;
+  destroy: () => void;
 };
 
 const CONFIG = {
@@ -22,6 +38,65 @@ const CONFIG = {
 };
 const deepestZ = Math.min(...SCENE_ITEMS.map((item) => item.z));
 CONFIG.loopSize = Math.abs(deepestZ) + 2600;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function detectInteractionMode(): InteractionMode {
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const touchCapable = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  return coarsePointer || touchCapable ? "touch" : "desktop";
+}
+
+function createDesktopScrollSource(): ScrollSource {
+  let currentScroll = 0;
+  let currentVelocity = 0;
+
+  const lenis = new Lenis({
+    smooth: true,
+    lerp: 0.08,
+    direction: "vertical",
+    gestureDirection: "vertical",
+    smoothTouch: true
+  } as unknown as ConstructorParameters<typeof Lenis>[0]);
+
+  lenis.on("scroll", ({ scroll, velocity }: { scroll: number; velocity: number }) => {
+    currentScroll = scroll;
+    currentVelocity = velocity;
+  });
+
+  return {
+    update: (time: number) => lenis.raf(time),
+    read: () => ({ scroll: currentScroll, velocity: currentVelocity }),
+    syncAfterResize: () => {
+      currentScroll = window.scrollY;
+      currentVelocity = 0;
+    },
+    destroy: () => lenis.destroy()
+  };
+}
+
+function createTouchScrollSource(): ScrollSource {
+  let currentScroll = window.scrollY;
+  let lastScroll = currentScroll;
+  let currentVelocity = 0;
+
+  return {
+    update: () => {
+      currentScroll = window.scrollY;
+      currentVelocity = currentScroll - lastScroll;
+      lastScroll = currentScroll;
+    },
+    read: () => ({ scroll: currentScroll, velocity: currentVelocity }),
+    syncAfterResize: () => {
+      currentScroll = window.scrollY;
+      lastScroll = currentScroll;
+      currentVelocity = 0;
+    },
+    destroy: () => undefined
+  };
+}
 
 function accentForItem(item: SceneWorldItem): string {
   if (item.emphasis === "accent") return "var(--accent)";
@@ -51,6 +126,39 @@ export default function App() {
       mouseY: 0
     };
 
+    const interactionMode = detectInteractionMode();
+    const isTouchMode = interactionMode === "touch";
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    document.documentElement.classList.toggle("touch-mode", isTouchMode);
+    document.documentElement.classList.toggle("desktop-mode", !isTouchMode);
+    document.documentElement.classList.toggle("reduced-motion", prefersReducedMotion);
+
+    const syncViewport = () => {
+      document.documentElement.style.setProperty("--app-height", `${window.innerHeight}px`);
+      document.documentElement.style.setProperty("--app-width", `${window.innerWidth}px`);
+    };
+
+    const recalcLayout = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const minScaleRef = Math.min(width / 1440, height / 960);
+      const desktopScale = clamp(minScaleRef, 0.78, 1.08);
+      const touchScale = clamp(minScaleRef, 0.7, 1);
+      const scale = isTouchMode ? touchScale : desktopScale;
+      const isLandscapeTouch = isTouchMode && width > height;
+
+      items.forEach((item) => {
+        if (item.type === "star") return;
+
+        const xScale = isLandscapeTouch ? scale * 0.9 : scale;
+        const yScale = isLandscapeTouch ? scale * 0.75 : scale;
+
+        item.x = item.baseX * xScale;
+        item.y = item.baseY * yScale;
+      });
+    };
+
     function init() {
       SCENE_ITEMS.forEach((sceneItem, idx) => {
         const el = document.createElement("div");
@@ -64,6 +172,8 @@ export default function App() {
           items.push({
             el,
             type: "text",
+            baseX: sceneItem.x,
+            baseY: sceneItem.y,
             x: sceneItem.x,
             y: sceneItem.y,
             rot: sceneItem.rot,
@@ -92,6 +202,8 @@ export default function App() {
           items.push({
             el,
             type: "card",
+            baseX: sceneItem.x,
+            baseY: sceneItem.y,
             x: sceneItem.x,
             y: sceneItem.y,
             rot: sceneItem.rot,
@@ -109,40 +221,53 @@ export default function App() {
         items.push({
           el,
           type: "star",
+          baseX: (Math.random() - 0.5) * 3000,
+          baseY: (Math.random() - 0.5) * 3000,
           x: (Math.random() - 0.5) * 3000,
           y: (Math.random() - 0.5) * 3000,
           rot: 0,
           baseZ: -Math.random() * CONFIG.loopSize
         });
       }
+
+      recalcLayout();
     }
 
     init();
+
+    syncViewport();
 
     const onMouseMove = (e: MouseEvent) => {
       state.mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       state.mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
     };
-    window.addEventListener("mousemove", onMouseMove);
+    if (!isTouchMode) {
+      window.addEventListener("mousemove", onMouseMove);
+    }
 
-    const lenis = new Lenis({
-      smooth: true,
-      lerp: 0.08,
-      direction: "vertical",
-      gestureDirection: "vertical",
-      smoothTouch: true
-    } as unknown as ConstructorParameters<typeof Lenis>[0]);
+    const scrollSource = isTouchMode ? createTouchScrollSource() : createDesktopScrollSource();
 
-    lenis.on("scroll", ({ scroll, velocity }: { scroll: number; velocity: number }) => {
-      state.scroll = scroll;
-      state.targetSpeed = velocity;
-    });
+    let resizeRaf = 0;
+    const onViewportChange = () => {
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        syncViewport();
+        recalcLayout();
+        scrollSource.syncAfterResize();
+      });
+    };
+
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("orientationchange", onViewportChange);
 
     let rafId = 0;
     let lastTime = 0;
 
     function raf(time: number) {
-      lenis.raf(time);
+      scrollSource.update(time);
+      const scrollState = scrollSource.read();
+      state.scroll = scrollState.scroll;
+      state.targetSpeed = scrollState.velocity;
 
       const delta = time - lastTime;
       lastTime = time;
@@ -150,7 +275,8 @@ export default function App() {
         fpsRef.current.innerText = String(Math.round(1000 / delta));
       }
 
-      state.velocity += (state.targetSpeed - state.velocity) * 0.1;
+      const velocityLerp = prefersReducedMotion ? 0.2 : isTouchMode ? 0.18 : 0.1;
+      state.velocity += (state.targetSpeed - state.velocity) * velocityLerp;
 
       if (velRef.current) {
         velRef.current.innerText = Math.abs(state.velocity).toFixed(2);
@@ -159,16 +285,22 @@ export default function App() {
         coordRef.current.innerText = `${state.scroll.toFixed(0)}`;
       }
 
-      const tiltX = state.mouseY * 5 - state.velocity * 0.5;
-      const tiltY = state.mouseX * 5;
+      const mouseTiltFactor = prefersReducedMotion ? 2.4 : 5;
+      const velocityTiltFactor = prefersReducedMotion ? 0.22 : isTouchMode ? 0.18 : 0.5;
+      const tiltX = isTouchMode
+        ? -state.velocity * velocityTiltFactor
+        : state.mouseY * mouseTiltFactor - state.velocity * velocityTiltFactor;
+      const tiltY = isTouchMode ? 0 : state.mouseX * mouseTiltFactor;
 
       world.style.transform = `
         rotateX(${tiltX}deg) 
         rotateY(${tiltY}deg)
       `;
 
-      const baseFov = 1000;
-      const fov = baseFov - Math.min(Math.abs(state.velocity) * 10, 600);
+      const baseFov = prefersReducedMotion ? 1250 : isTouchMode ? 1160 : 1000;
+      const fovVelocityFactor = prefersReducedMotion ? 2 : isTouchMode ? 4.5 : 10;
+      const fovMaxWarp = prefersReducedMotion ? 120 : isTouchMode ? 240 : 600;
+      const fov = baseFov - Math.min(Math.abs(state.velocity) * fovVelocityFactor, fovMaxWarp);
       viewport.style.perspective = `${fov}px`;
 
       const cameraZ = state.scroll * CONFIG.camSpeed;
@@ -181,10 +313,18 @@ export default function App() {
         if (vizZ > 500) vizZ -= modC;
 
         let alpha = 1;
-        if (vizZ < -3600) alpha = 0;
-        else if (vizZ < -2600) alpha = (vizZ + 3600) / 1000;
+        const farFadeStart = isTouchMode ? -3800 : -3600;
+        const farFadeRange = isTouchMode ? 1200 : 1000;
+        if (vizZ < farFadeStart) alpha = 0;
+        else if (vizZ < farFadeStart + farFadeRange) {
+          alpha = (vizZ - farFadeStart) / farFadeRange;
+        }
 
-        if (vizZ > 180 && item.type !== "star") alpha = 1 - (vizZ - 180) / 520;
+        const nearFadeStart = isTouchMode ? 220 : 180;
+        const nearFadeRange = isTouchMode ? 620 : 520;
+        if (vizZ > nearFadeStart && item.type !== "star") {
+          alpha = 1 - (vizZ - nearFadeStart) / nearFadeRange;
+        }
 
         if (alpha < 0) alpha = 0;
         item.el.style.opacity = String(alpha);
@@ -205,7 +345,8 @@ export default function App() {
             }
           } else {
             const t = time * 0.001;
-            const float = Math.sin(t + item.x) * 10;
+            const floatAmplitude = prefersReducedMotion ? 3 : isTouchMode ? 5.5 : 10;
+            const float = Math.sin(t + item.x * 0.01) * floatAmplitude;
             trans += ` rotateZ(${item.rot}deg) rotateY(${float}deg)`;
           }
 
@@ -220,8 +361,14 @@ export default function App() {
 
     return () => {
       cancelAnimationFrame(rafId);
-      lenis.destroy();
+      cancelAnimationFrame(resizeRaf);
+      scrollSource.destroy();
       window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("orientationchange", onViewportChange);
+      document.documentElement.classList.remove("touch-mode");
+      document.documentElement.classList.remove("desktop-mode");
+      document.documentElement.classList.remove("reduced-motion");
       items.length = 0;
       world.innerHTML = "";
     };
