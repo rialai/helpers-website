@@ -154,8 +154,16 @@ export default function App() {
         const xScale = isLandscapeTouch ? scale * 0.9 : scale;
         const yScale = isLandscapeTouch ? scale * 0.75 : scale;
 
-        item.x = item.baseX * xScale;
-        item.y = item.baseY * yScale;
+          if (item.type === "text") {
+            // Keep large scene labels readable on first frame by reducing lateral spread.
+            const textXFactor = isTouchMode ? 0.4 : 0.5;
+            item.x = item.baseX * xScale * textXFactor;
+            item.y = item.baseY * yScale;
+            return;
+          }
+
+          item.x = item.baseX * xScale;
+          item.y = item.baseY * yScale;
       });
     };
 
