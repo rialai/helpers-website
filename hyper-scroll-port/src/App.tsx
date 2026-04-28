@@ -107,9 +107,7 @@ function accentForItem(item: SceneWorldItem): string {
 export default function App() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
-  const fpsRef = useRef<HTMLSpanElement>(null);
   const velRef = useRef<HTMLSpanElement>(null);
-  const coordRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!worldRef.current || !viewportRef.current) return;
@@ -314,20 +312,13 @@ export default function App() {
       state.scroll = wrappedScroll + scrollWrapOffset;
       state.targetSpeed = scrollState.velocity;
 
-      const delta = time - lastTime;
       lastTime = time;
-      if (time % 10 < 1 && fpsRef.current && delta > 0) {
-        fpsRef.current.innerText = String(Math.round(1000 / delta));
-      }
 
       const velocityLerp = prefersReducedMotion ? 0.2 : isTouchMode ? 0.18 : 0.1;
       state.velocity += (state.targetSpeed - state.velocity) * velocityLerp;
 
       if (velRef.current) {
         velRef.current.innerText = Math.abs(state.velocity).toFixed(2);
-      }
-      if (coordRef.current) {
-        coordRef.current.innerText = `${state.scroll.toFixed(0)}`;
       }
 
       const mouseTiltFactor = prefersReducedMotion ? 2.4 : 5;
@@ -430,24 +421,8 @@ export default function App() {
       <div className="noise" />
 
       <div className="hud">
-        <div className="hud-top">
-          <span>COOP.READY</span>
-          <div className="hud-line" />
-          <span>
-            FPS: <strong ref={fpsRef}>60</strong>
-          </span>
-        </div>
-
         <div className="center-nav">
           FLOW VELOCITY // <strong ref={velRef}>0.00</strong>
-        </div>
-
-        <div className="hud-bottom">
-          <span>
-            COORD: <strong ref={coordRef}>000.000</strong>
-          </span>
-          <div className="hud-line" />
-          <span>BUILD 0.1 [LOCAL]</span>
         </div>
       </div>
 
