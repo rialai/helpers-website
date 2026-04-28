@@ -391,16 +391,19 @@ export default function App() {
       if (finalCardVizZ !== null) {
         const userMovingUp = scrollState.velocity < -4;
         const userMovingFast = Math.abs(scrollState.velocity) > 26;
-        const shouldAssist = finalCardAlpha > 0.06 && finalCardVizZ < gravityTargetZ && !userMovingUp && !userMovingFast;
+        const shouldAssist = finalCardVizZ < gravityTargetZ && !userMovingUp && !userMovingFast;
 
         if (shouldAssist) {
+          const visibilityFactor = 0.2 + finalCardAlpha * 0.8;
           const deltaZ = gravityTargetZ - finalCardVizZ;
           const desiredDeltaScroll = deltaZ / CONFIG.camSpeed;
-          const gravityLerp = prefersReducedMotion ? 0.008 : isTouchMode ? 0.018 : 0.012;
-          const maxStep = prefersReducedMotion ? 3 : isTouchMode ? 11 : 7;
+          const gravityLerpBase = prefersReducedMotion ? 0.008 : isTouchMode ? 0.018 : 0.012;
+          const gravityLerp = gravityLerpBase * visibilityFactor;
+          const maxStepBase = prefersReducedMotion ? 3 : isTouchMode ? 11 : 7;
+          const maxStep = maxStepBase * visibilityFactor;
           const gravityStep = clamp(desiredDeltaScroll * gravityLerp, 0, maxStep);
 
-          if (gravityStep > 0.05) {
+          if (gravityStep > 0.02) {
             assistedScroll += gravityStep;
             scrollSource.jumpTo(assistedScroll);
           }
