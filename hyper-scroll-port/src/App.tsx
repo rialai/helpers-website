@@ -326,6 +326,15 @@ export default function App() {
           alpha = 1 - (vizZ - nearFadeStart) / nearFadeRange;
         }
 
+        if (item.type === "text") {
+          // Text now visibly fades as soon as scrolling starts, then fades deeper on faster motion.
+          const motion = Math.abs(state.targetSpeed);
+          const isScrolling = motion > (isTouchMode ? 0.02 : 0.01);
+          const baseScrollFade = isScrolling ? (isTouchMode ? 0.38 : 0.3) : 0;
+          const motionFade = clamp(motion * (isTouchMode ? 0.4 : 0.32), 0, 0.9);
+          alpha *= 1 - Math.max(baseScrollFade, motionFade);
+        }
+
         if (alpha < 0) alpha = 0;
         item.el.style.opacity = String(alpha);
 
@@ -337,12 +346,7 @@ export default function App() {
             trans += ` scale3d(1, 1, ${stretch})`;
           } else if (item.type === "text") {
             trans += ` rotateZ(${item.rot}deg)`;
-            if (Math.abs(state.velocity) > 1) {
-              const offset = state.velocity * 2;
-              item.el.style.textShadow = `${offset}px 0 red, ${-offset}px 0 cyan`;
-            } else {
-              item.el.style.textShadow = "none";
-            }
+            item.el.style.textShadow = "none";
           } else {
             const t = time * 0.001;
             const floatAmplitude = prefersReducedMotion ? 3 : isTouchMode ? 5.5 : 10;
