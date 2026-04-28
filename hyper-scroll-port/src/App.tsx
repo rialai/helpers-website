@@ -133,6 +133,7 @@ export default function App() {
       scroll: 0,
       velocity: 0,
       targetSpeed: 0,
+      textFade: 0,
       mouseX: 0,
       mouseY: 0
     };
@@ -354,6 +355,10 @@ export default function App() {
       const velocityLerp = prefersReducedMotion ? 0.2 : isTouchMode ? 0.18 : 0.1;
       state.velocity += (state.targetSpeed - state.velocity) * velocityLerp;
 
+      const desiredTextFade = clamp(Math.abs(state.velocity) * 0.22, 0, prefersReducedMotion ? 0.55 : 0.85);
+      const textFadeLerp = prefersReducedMotion ? 0.16 : isTouchMode ? 0.12 : 0.2;
+      state.textFade += (desiredTextFade - state.textFade) * textFadeLerp;
+
       if (velRef.current) {
         velRef.current.innerText = Math.abs(state.velocity).toFixed(2);
       }
@@ -400,12 +405,8 @@ export default function App() {
         }
 
         if (item.type === "text") {
-          // Text now visibly fades as soon as scrolling starts, then fades deeper on faster motion.
-          const motion = Math.abs(state.targetSpeed);
-          const isScrolling = motion > (isTouchMode ? 0.02 : 0.01);
-          const baseScrollFade = isScrolling ? (isTouchMode ? 0.38 : 0.3) : 0;
-          const motionFade = clamp(motion * (isTouchMode ? 0.4 : 0.32), 0, 0.9);
-          alpha *= 1 - Math.max(baseScrollFade, motionFade);
+          // Fade amount is smoothed from velocity to avoid threshold flicker on touch devices.
+          alpha *= 1 - state.textFade;
         }
 
         if (alpha < 0) alpha = 0;
