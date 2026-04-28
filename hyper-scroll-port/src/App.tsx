@@ -120,7 +120,6 @@ function accentForItem(item: SceneWorldItem): string {
 export default function App() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
-  const velRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!worldRef.current || !viewportRef.current) return;
@@ -359,10 +358,6 @@ export default function App() {
       const textFadeLerp = prefersReducedMotion ? 0.16 : isTouchMode ? 0.12 : 0.2;
       state.textFade += (desiredTextFade - state.textFade) * textFadeLerp;
 
-      if (velRef.current) {
-        velRef.current.innerText = Math.abs(state.velocity).toFixed(2);
-      }
-
       const mouseTiltFactor = prefersReducedMotion ? 2.4 : 5;
       const velocityTiltFactor = prefersReducedMotion ? 0.22 : isTouchMode ? 0.18 : 0.5;
       const tiltX = isTouchMode
@@ -457,12 +452,6 @@ export default function App() {
       <div className="scanlines" />
       <div className="vignette" />
       <div className="noise" />
-
-      <div className="hud">
-        <div className="center-nav">
-          FLOW VELOCITY // <strong ref={velRef}>0.00</strong>
-        </div>
-      </div>
 
       <div className="viewport" ref={viewportRef}>
         <div className="world" ref={worldRef} />
