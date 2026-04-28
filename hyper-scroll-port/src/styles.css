@@ -195,13 +195,11 @@ html.touch-mode #root {
   transform: translate(-50%, -50%);
 }
 
-@media (hover: hover) {
-  .card:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 30px rgba(255, 0, 60, 0.2);
-    background: rgba(20, 20, 20, 0.8);
-    z-index: 100;
-  }
+.card.is-leading {
+  border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(255, 0, 60, 0.2);
+  background: rgba(20, 20, 20, 0.8);
+  z-index: 100;
 }
 
 .card::before,
@@ -228,8 +226,8 @@ html.touch-mode #root {
   border-right-color: var(--text);
 }
 
-.card:hover::before,
-.card:hover::after {
+.card.is-leading::before,
+.card.is-leading::after {
   width: 100%;
   height: 100%;
   border-color: var(--accent);

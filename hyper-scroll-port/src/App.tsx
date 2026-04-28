@@ -9,6 +9,7 @@ type ItemType = "text" | "card" | "star";
 type WorldItem = {
   el: HTMLDivElement;
   type: ItemType;
+  cardEl?: HTMLDivElement;
   baseX: number;
   baseY: number;
   x: number;
@@ -224,6 +225,7 @@ export default function App() {
           items.push({
             el,
             type: "card",
+            cardEl: card,
             baseX: sceneItem.x,
             baseY: sceneItem.y,
             x: sceneItem.x,
@@ -344,6 +346,7 @@ export default function App() {
 
     let rafId = 0;
     let lastTime = 0;
+    let leadingCardEl: HTMLDivElement | null = null;
 
     function raf(time: number) {
       scrollSource.update(time);
@@ -380,6 +383,8 @@ export default function App() {
       viewport.style.perspective = `${fov}px`;
 
       const cameraZ = state.scroll * CONFIG.camSpeed;
+      let nextLeadingCardEl: HTMLDivElement | null = null;
+      let nextLeadingCardZ = -Infinity;
 
       items.forEach((item) => {
         const relZ = item.baseZ + cameraZ;
@@ -410,6 +415,11 @@ export default function App() {
         if (alpha < 0) alpha = 0;
         item.el.style.opacity = String(alpha);
 
+        if (item.type === "card" && item.cardEl && alpha > 0.04 && vizZ > nextLeadingCardZ) {
+          nextLeadingCardEl = item.cardEl;
+          nextLeadingCardZ = vizZ;
+        }
+
         if (alpha > 0) {
           let trans = `translate3d(${item.x}px, ${item.y}px, ${vizZ}px)`;
 
@@ -430,6 +440,16 @@ export default function App() {
         }
       });
 
+      if (leadingCardEl !== nextLeadingCardEl) {
+        if (leadingCardEl) {
+          leadingCardEl.classList.remove("is-leading");
+        }
+        if (nextLeadingCardEl) {
+          nextLeadingCardEl.classList.add("is-leading");
+        }
+        leadingCardEl = nextLeadingCardEl;
+      }
+
       rafId = requestAnimationFrame(raf);
     }
 
@@ -445,6 +465,9 @@ export default function App() {
       document.documentElement.classList.remove("touch-mode");
       document.documentElement.classList.remove("desktop-mode");
       document.documentElement.classList.remove("reduced-motion");
+      if (leadingCardEl) {
+        leadingCardEl.classList.remove("is-leading");
+      }
       items.length = 0;
       world.innerHTML = "";
     };
