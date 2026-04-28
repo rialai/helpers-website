@@ -41,11 +41,21 @@ html.touch-mode body {
 html.touch-mode body {
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+  height: auto;
+  min-height: var(--app-height, 100vh);
+}
+
+html.touch-mode #root {
+  height: auto;
   min-height: var(--app-height, 100vh);
 }
 
 @supports (height: 100dvh) {
   html.touch-mode body {
+    min-height: 100dvh;
+  }
+
+  html.touch-mode #root {
     min-height: 100dvh;
   }
 }
