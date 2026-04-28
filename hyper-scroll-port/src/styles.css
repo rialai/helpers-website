@@ -271,14 +271,15 @@ html.touch-mode body {
 .big-text {
   font-size: 15vw;
   font-weight: 800;
-  color: transparent;
-  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.88);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.2);
   text-transform: uppercase;
   white-space: nowrap;
   transform: translate(-50%, -50%);
   pointer-events: none;
   letter-spacing: -0.5rem;
-  mix-blend-mode: overlay;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.14);
+  mix-blend-mode: normal;
 }
 
 .star {
