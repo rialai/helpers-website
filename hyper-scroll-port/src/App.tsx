@@ -268,13 +268,50 @@ export default function App() {
     window.addEventListener("resize", onViewportChange);
     window.addEventListener("orientationchange", onViewportChange);
 
+    let scrollWrapOffset = 0;
+    const wrapEdgePx = 700;
+
+    const getScrollMax = () => {
+      const doc = document.documentElement;
+      return Math.max(0, doc.scrollHeight - window.innerHeight);
+    };
+
+    const wrapScrollIfNeeded = (rawScroll: number) => {
+      const maxScroll = getScrollMax();
+      if (maxScroll < wrapEdgePx * 3) {
+        return rawScroll;
+      }
+
+      const topWrapPoint = wrapEdgePx;
+      const bottomWrapPoint = maxScroll - wrapEdgePx;
+
+      if (rawScroll <= topWrapPoint) {
+        const nextScroll = bottomWrapPoint;
+        window.scrollTo(0, nextScroll);
+        scrollWrapOffset += rawScroll - nextScroll;
+        scrollSource.syncAfterResize();
+        return nextScroll;
+      }
+
+      if (rawScroll >= bottomWrapPoint) {
+        const nextScroll = topWrapPoint;
+        window.scrollTo(0, nextScroll);
+        scrollWrapOffset += rawScroll - nextScroll;
+        scrollSource.syncAfterResize();
+        return nextScroll;
+      }
+
+      return rawScroll;
+    };
+
     let rafId = 0;
     let lastTime = 0;
 
     function raf(time: number) {
       scrollSource.update(time);
       const scrollState = scrollSource.read();
-      state.scroll = scrollState.scroll;
+      const wrappedScroll = wrapScrollIfNeeded(scrollState.scroll);
+      state.scroll = wrappedScroll + scrollWrapOffset;
       state.targetSpeed = scrollState.velocity;
 
       const delta = time - lastTime;
