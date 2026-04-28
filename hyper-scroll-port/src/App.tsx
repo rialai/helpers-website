@@ -26,6 +26,7 @@ type ScrollRead = {
 type ScrollSource = {
   update: (time: number) => void;
   read: () => ScrollRead;
+  jumpTo: (scroll: number) => void;
   syncAfterResize: () => void;
   destroy: () => void;
 };
@@ -69,6 +70,11 @@ function createDesktopScrollSource(): ScrollSource {
   return {
     update: (time: number) => lenis.raf(time),
     read: () => ({ scroll: currentScroll, velocity: currentVelocity }),
+    jumpTo: (scroll: number) => {
+      lenis.scrollTo(scroll, { immediate: true, force: true });
+      currentScroll = scroll;
+      currentVelocity = 0;
+    },
     syncAfterResize: () => {
       currentScroll = window.scrollY;
       currentVelocity = 0;
@@ -89,6 +95,12 @@ function createTouchScrollSource(): ScrollSource {
       lastScroll = currentScroll;
     },
     read: () => ({ scroll: currentScroll, velocity: currentVelocity }),
+    jumpTo: (scroll: number) => {
+      window.scrollTo(0, scroll);
+      currentScroll = scroll;
+      lastScroll = scroll;
+      currentVelocity = 0;
+    },
     syncAfterResize: () => {
       currentScroll = window.scrollY;
       lastScroll = currentScroll;
@@ -282,25 +294,41 @@ export default function App() {
 
       const topWrapPoint = wrapEdgePx;
       const bottomWrapPoint = maxScroll - wrapEdgePx;
+      const wrapSpan = bottomWrapPoint - topWrapPoint;
+
+      if (wrapSpan <= 0) {
+        return rawScroll;
+      }
 
       if (rawScroll <= topWrapPoint) {
-        const nextScroll = bottomWrapPoint;
-        window.scrollTo(0, nextScroll);
+        const nextScroll = rawScroll + wrapSpan;
         scrollWrapOffset += rawScroll - nextScroll;
-        scrollSource.syncAfterResize();
+        scrollSource.jumpTo(nextScroll);
         return nextScroll;
       }
 
       if (rawScroll >= bottomWrapPoint) {
-        const nextScroll = topWrapPoint;
-        window.scrollTo(0, nextScroll);
+        const nextScroll = rawScroll - wrapSpan;
         scrollWrapOffset += rawScroll - nextScroll;
-        scrollSource.syncAfterResize();
+        scrollSource.jumpTo(nextScroll);
         return nextScroll;
       }
 
       return rawScroll;
     };
+
+    const initInfiniteAnchor = () => {
+      const maxScroll = getScrollMax();
+      if (maxScroll < wrapEdgePx * 3) {
+        return;
+      }
+
+      const anchorScroll = Math.round(maxScroll * 0.5);
+      scrollSource.jumpTo(anchorScroll);
+      scrollWrapOffset = -anchorScroll;
+    };
+
+    initInfiniteAnchor();
 
     let rafId = 0;
     let lastTime = 0;
