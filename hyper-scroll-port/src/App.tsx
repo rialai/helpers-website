@@ -47,7 +47,8 @@ function clamp(value: number, min: number, max: number): number {
 function detectInteractionMode(): InteractionMode {
   const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
   const touchCapable = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  return coarsePointer || touchCapable ? "touch" : "desktop";
+  const mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  return coarsePointer || touchCapable || mobileUa ? "touch" : "desktop";
 }
 
 function createDesktopScrollSource(): ScrollSource {
@@ -287,6 +288,10 @@ export default function App() {
     };
 
     const wrapScrollIfNeeded = (rawScroll: number) => {
+      if (isTouchMode) {
+        return rawScroll;
+      }
+
       const maxScroll = getScrollMax();
       if (maxScroll < wrapEdgePx * 3) {
         return rawScroll;
@@ -318,6 +323,10 @@ export default function App() {
     };
 
     const initInfiniteAnchor = () => {
+      if (isTouchMode) {
+        return;
+      }
+
       const maxScroll = getScrollMax();
       if (maxScroll < wrapEdgePx * 3) {
         return;
