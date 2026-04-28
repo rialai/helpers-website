@@ -10,6 +10,7 @@ type WorldItem = {
   el: HTMLDivElement;
   type: ItemType;
   cardEl?: HTMLDivElement;
+  sceneId?: string;
   baseX: number;
   baseY: number;
   x: number;
@@ -38,6 +39,7 @@ const CONFIG = {
   camSpeed: 2.5,
   colors: ["#ff003c", "#00f3ff", "#ccff00", "#ffffff"]
 };
+const FINAL_CARD_ID = "s9-card-apply";
 const deepestZ = Math.min(...SCENE_ITEMS.map((item) => item.z));
 CONFIG.loopSize = Math.abs(deepestZ) + 2600;
 
@@ -194,6 +196,7 @@ export default function App() {
           items.push({
             el,
             type: "text",
+            sceneId: sceneItem.id,
             baseX: sceneItem.x,
             baseY: sceneItem.y,
             x: sceneItem.x,
@@ -226,6 +229,7 @@ export default function App() {
             el,
             type: "card",
             cardEl: card,
+            sceneId: sceneItem.id,
             baseX: sceneItem.x,
             baseY: sceneItem.y,
             x: sceneItem.x,
@@ -351,7 +355,59 @@ export default function App() {
     function raf(time: number) {
       scrollSource.update(time);
       const scrollState = scrollSource.read();
-      const wrappedScroll = wrapScrollIfNeeded(scrollState.scroll);
+      let assistedScroll = scrollState.scroll;
+      const gravityTargetZ = 40;
+
+      const gravityCameraZ = assistedScroll * CONFIG.camSpeed;
+      let finalCardVizZ: number | null = null;
+      let finalCardAlpha = 0;
+
+      items.forEach((item) => {
+        if (item.type !== "card" || item.sceneId !== FINAL_CARD_ID) return;
+
+        const relZ = item.baseZ + gravityCameraZ;
+        const modC = CONFIG.loopSize;
+        let vizZ = ((relZ % modC) + modC) % modC;
+        if (vizZ > 500) vizZ -= modC;
+
+        let alpha = 1;
+        const farFadeStart = isTouchMode ? -3800 : -3600;
+        const farFadeRange = isTouchMode ? 1200 : 1000;
+        if (vizZ < farFadeStart) alpha = 0;
+        else if (vizZ < farFadeStart + farFadeRange) {
+          alpha = (vizZ - farFadeStart) / farFadeRange;
+        }
+
+        const nearFadeStart = isTouchMode ? 220 : 180;
+        const nearFadeRange = isTouchMode ? 620 : 520;
+        if (vizZ > nearFadeStart) {
+          alpha = 1 - (vizZ - nearFadeStart) / nearFadeRange;
+        }
+
+        finalCardVizZ = vizZ;
+        finalCardAlpha = clamp(alpha, 0, 1);
+      });
+
+      if (finalCardVizZ !== null) {
+        const userMovingUp = scrollState.velocity < -4;
+        const userMovingFast = Math.abs(scrollState.velocity) > 26;
+        const shouldAssist = finalCardAlpha > 0.06 && finalCardVizZ < gravityTargetZ && !userMovingUp && !userMovingFast;
+
+        if (shouldAssist) {
+          const deltaZ = gravityTargetZ - finalCardVizZ;
+          const desiredDeltaScroll = deltaZ / CONFIG.camSpeed;
+          const gravityLerp = prefersReducedMotion ? 0.008 : isTouchMode ? 0.018 : 0.012;
+          const maxStep = prefersReducedMotion ? 3 : isTouchMode ? 11 : 7;
+          const gravityStep = clamp(desiredDeltaScroll * gravityLerp, 0, maxStep);
+
+          if (gravityStep > 0.05) {
+            assistedScroll += gravityStep;
+            scrollSource.jumpTo(assistedScroll);
+          }
+        }
+      }
+
+      const wrappedScroll = wrapScrollIfNeeded(assistedScroll);
       state.scroll = wrappedScroll + scrollWrapOffset;
       state.targetSpeed = scrollState.velocity;
 
