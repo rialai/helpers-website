@@ -179,7 +179,9 @@ export default function App() {
     };
 
     function init() {
-      SCENE_ITEMS.forEach((sceneItem, idx) => {
+      let cardCounter = 0;
+
+      SCENE_ITEMS.forEach((sceneItem) => {
         const el = document.createElement("div");
         el.className = "item";
 
@@ -200,6 +202,7 @@ export default function App() {
             emphasis: sceneItem.emphasis
           });
         } else {
+          const cardNumber = String(++cardCounter).padStart(2, "0");
           const card = document.createElement("div");
           card.className = "card";
           const accentColor = accentForItem(sceneItem);
@@ -214,7 +217,7 @@ export default function App() {
               <span>${sceneItem.footerLeft ?? "HELPERS"}</span>
               <span>${sceneItem.footerRight ?? "LOCAL"}</span>
             </div>
-            <div style="position:absolute; bottom:2rem; right:2rem; font-size:4rem; opacity:0.08; font-weight:900;">${String(idx + 1).padStart(2, "0")}</div>
+            <div style="position:absolute; bottom:2rem; right:2rem; font-size:4rem; opacity:0.08; font-weight:900;">${cardNumber}</div>
           `;
           el.appendChild(card);
 
